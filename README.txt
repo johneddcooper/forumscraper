@@ -1,3 +1,11 @@
+required packages:
+sudo apt-get install mysql-server
+sudo apt-get install python-mysqldb
+sudo apt-get install python-pip
+sudo pip install selenium
+sudo pip install BeautifulSoup
+sudo apt-get install xautomation
+
 usage:
 to create database, run
   mysql < create.sql
