@@ -9,9 +9,11 @@ import MySQLdb as mdb
 import re, urlparse
 import os, sys, getopt
 
-mysql_host = "localhost"
-mysql_username = "root"
-mysql_password = ""
+from local_settings import *
+
+mysql_host = host
+mysql_username = user
+mysql_password = passwd
 
 def usage():
   print "usage: vbscraper.py URL"

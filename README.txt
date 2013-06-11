@@ -10,11 +10,14 @@ usage:
 to create database, run
   mysql -u 'mysql_username' < create.sql
 
-edit db_utf8.py to contain proper mysql credentials, then run
+copy the settings file, then edit it to contain the correct login credentials
+  cp local_settings.py.sample local_settings.py
+
+then run
   python db_utf8.py
 (changes mysql table columns to all accept UTF-8)
 
-edit vbscraper.py to contain proper mysql credentials before running
+finally, run
   python vbscraper.py URL
 
 URL must contain http and end with a /

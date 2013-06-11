@@ -1,10 +1,7 @@
 #! /usr/bin/env python
 import MySQLdb
 
-host = "localhost"
-passwd = ""
-user = "root"
-dbname = "forumsdb"
+from local_settings import *
 
 db = MySQLdb.connect(host=host, user=user, passwd=passwd, db=dbname)
 cursor = db.cursor()
