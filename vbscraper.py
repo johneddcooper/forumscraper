@@ -10,6 +10,7 @@ import re, urlparse
 import os, sys, getopt
 
 from local_settings import *
+import dblib
 
 mysql_host = host
 mysql_username = user
@@ -58,12 +59,7 @@ parse_args()
 backtime = -1
 
 ##setup mysql db
-try:
-  con = mdb.connect(mysql_host, mysql_username, mysql_password, 'forumsdb', charset='utf8')
-  cur = con.cursor()
-except mdb.Error, e:
-  print "Error %d: %s" % (e.args[0],e.args[1])
-  sys.exit(1)
+con, cur = dblib.setup_db()
 
 ##initialize selenium
 browser = webdriver.Firefox()
@@ -153,11 +149,13 @@ for subname, link in sublinks:
           userlinks = bodysoup[0].findAll('a', attrs={'class':'bigusername'})
           if len(userlinks) > 0:
             username = userlinks[0]
+	    name = username.getText()
+	    link = username['href']
           else:
             username = "Guest"
-          name = username.getText()
+            name = "Guest"
+	    link = ""
           #if name not in name database:
-          link = username['href']
           usersoup=bodysoup[0].findAll('div')
           title = usersoup[1].getText()
           inner_ind = 2
@@ -177,17 +175,24 @@ for subname, link in sublinks:
           sig_extracted = extract(block.prettify(), "<!-- sig -->", "<!-- / sig -->")
           edit_extracted = extract(block.prettify(), "<!-- edit note -->", "<!-- / edit note -->")
           
-          cur.execute("""INSERT INTO FORUM_POSTS
-          (forum_name, subforum_name, thread_name, postdate, postlink, msg, username, usertitle,
-          joindate, userlink, sig, edits) 
-          VALUES
-          (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-          (home, subname, t.getText(), postdate, postlink, \
+          P = dblib.post(home, subname, t.getText(), postdate, postlink, \
           con.escape_string(msg_extracted).decode("utf-8"), name, title, joindate, \
           link, con.escape_string(sig_extracted).decode("utf-8"), \
           con.escape_string(edit_extracted).decode("utf-8"))
-          )
-          con.commit()
+
+          dblib.insert_data(con, cur, P)
+          
+          #cur.execute("""INSERT INTO FORUM_POSTS
+          #(forum_name, subforum_name, thread_name, postdate, postlink, msg, username, usertitle,
+          #joindate, userlink, sig, edits) 
+          #VALUES
+          #(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+          #(home, subname, t.getText(), postdate, postlink, \
+          #con.escape_string(msg_extracted).decode("utf-8"), name, title, joindate, \
+          #link, con.escape_string(sig_extracted).decode("utf-8"), \
+          #con.escape_string(edit_extracted).decode("utf-8"))
+          #)
+          #con.commit()
           
         thread_page+=1
     
