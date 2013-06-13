@@ -1,4 +1,5 @@
 import MySQLdb as mdb
+import sys
 from local_settings import *
 
 class post:
