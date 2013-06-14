@@ -24,7 +24,7 @@ URL must contain http and end with a /
 good: http://forum.doom9.org/
 bad : forum.doom9.org
 
-The browser should remain in focus; sometimes the program sends an "Escape" keypress to interrupt a hung page.
+THE BROWSER MUST REMAIN IN FOCUS TO INTERRUPT HUNG PAGES!
 
 Todo:
 -Restarts
