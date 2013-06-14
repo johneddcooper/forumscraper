@@ -44,10 +44,12 @@ def setup_db():
 
   return con, cur
 
-def get_id(cur, table, id_name, name):
+def get_id( cur, table, id_name, name):
   #This function gets the mysql generated id number of a row from a table
 	#INPUTS: Cur is a cursor object, table is a string that is the name of the table, id_name is the name of the column that is being searched, name is a string that is the name of the
- 
+  
+  regex = re.compile(r'["\']')
+  name = regex.sub('', name)
   command = "SELECT * FROM %s WHERE %s = \"%s\";" % (table, id_name, name)
   #print command
   cur.execute(command)
@@ -62,7 +64,7 @@ def insert_data(con, cur, post):
 
   #print post
 
-  f_id = get_id(cur, "FORUMS", "forum_url", post.home)
+  f_id = get_id( cur, "FORUMS", "forum_url", post.home)
   if not f_id:
 		#print "Forum id not found"
 		cur.execute("INSERT INTO FORUMS (forum_name, forum_url) VALUES (%s, %s)", (post.home, post.home))
@@ -71,7 +73,7 @@ def insert_data(con, cur, post):
   #print f_id
 
 
-  sf_id = get_id(cur, "SUBFORUMS", "subforum_name", post.subname)
+  sf_id = get_id( cur, "SUBFORUMS", "subforum_name", post.subname)
   if not sf_id:
 		#print "subForum id not found"
 		cur.execute("INSERT INTO SUBFORUMS (subforum_name, forum_id) VALUES (%s, %s)", (post.subname, f_id))
@@ -79,15 +81,15 @@ def insert_data(con, cur, post):
 		sf_id = get_id(cur, "SUBFORUMS", "subforum_name", post.subname)
   #print sf_id
 
-  thread_id = get_id(cur, "THREADS", "thread_name", post.thread)
+  thread_id = get_id( cur, "THREADS", "thread_name", post.thread)
   if not thread_id:
 		#print "thread id not found"
 		cur.execute("INSERT INTO THREADS (thread_name, subforum_id) VALUES (%s, %s)", (post.thread, sf_id))
 		con.commit()
 		thread_id = get_id(cur, "THREADS", "thread_name", post.thread)
-  #print thread_id
+  		print "New THREAD: %s" % post.thread
 
-  user_id = get_id(cur, "USERS", "username", post.name)
+  user_id = get_id( cur, "USERS", "username", post.name)
   if not user_id:
 		#print "post id not found\nPOST MESSAGE: %s\n\n" % (post.msg)
 		cur.execute("INSERT INTO USERS (forum_id, username, usertitle, joindate, sig) VALUES (%s, %s, %s, %s, %s)", (f_id, post.name, post.title, post.joindate, post.sig))
@@ -96,7 +98,7 @@ def insert_data(con, cur, post):
   #print post_id
 
 
-  post_id = get_id(cur, "POSTS", "postlink", post.plink)
+  post_id = get_id( cur, "POSTS", "postlink", post.plink)
   if not post_id:
 		#print "post id not found\nPOST MESSAGE: %s\n\n" % (post.msg)
 		cur.execute("INSERT INTO POSTS (postdate, postlink, msg, edits, thread_id, user_id) VALUES (%s, %s, %s, %s, %s, %s)", (post.date, post.plink, post.msg, post.edit, thread_id, user_id))

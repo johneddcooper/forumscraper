@@ -148,8 +148,8 @@ for subname, sublink in sublinks:
           trsoup = block.findAll('tr') #split block table
           header = trsoup[0].findAll('td')
           postdate = header[0].getText(' ')
-          print "\n\n\nGrabbed Postdate: " + postdate
-          print "Grabbed Header: " + str(header)
+          #print "\n\n\nGrabbed Postdate: " + postdate
+          #print "Grabbed Header: " + str(header)
           postlink = header[1].findAll('a')[0]['href'] #index 1 returns the showthread link rather than showpost
           bodysoup = trsoup[1].findAll('td') #split body of message into username panel and post info
           
