@@ -8,6 +8,7 @@ import MySQLdb as mdb
 
 import re, urlparse
 import os, sys, getopt
+import re, copy
 
 from local_settings import *
 import dblib
@@ -72,6 +73,10 @@ except TimeoutException:
 
 ##get subforums from main directory
 main_src = browser.page_source
+
+#strip html comments
+main_src = re.sub("<!-+.*>?","", main_src)
+
 main_soup = bs(main_src)
 subforums = main_soup.findAll('td', attrs={'class':'alt1Active'})
 sublinks = []
@@ -142,7 +147,9 @@ for subname, link in sublinks:
           i+=1 #first post is 1
           trsoup = block.findAll('tr') #split block table
           header = trsoup[0].findAll('td')
-          postdate = header[0].getText()
+          postdate = header[0].getText(' ')
+          print "\n\n\nGrabbed Postdate: " + postdate
+          print "Grabbed Header: " + str(header)
           postlink = header[1].findAll('a')[0]['href'] #index 1 returns the showthread link rather than showpost
           bodysoup = trsoup[1].findAll('td') #split body of message into username panel and post info
           
@@ -174,8 +181,9 @@ for subname, link in sublinks:
           msg_extracted = extract(bodysoup[1].prettify(), "<!-- message -->", "<!-- / message -->")
           sig_extracted = extract(block.prettify(), "<!-- sig -->", "<!-- / sig -->")
           edit_extracted = extract(block.prettify(), "<!-- edit note -->", "<!-- / edit note -->")
+          date_extracted = extract(block.prettify(), "<!-- status icon and date -->", "<!-- / status icon and date -->")
           
-          P = dblib.post(home, subname, t.getText(), postdate, postlink, \
+          P = dblib.post(home, subname, t.getText(), con.escape_string(date_extracted).decode("utf-8"), postlink, \
           con.escape_string(msg_extracted).decode("utf-8"), name, title, joindate, \
           link, con.escape_string(sig_extracted).decode("utf-8"), \
           con.escape_string(edit_extracted).decode("utf-8"))

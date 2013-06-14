@@ -71,7 +71,7 @@ CREATE TABLE `POSTS` (
   `post_id` int(11) NOT NULL AUTO_INCREMENT,
   `postdate` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
   `postlink` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `msg` varchar(4000) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `msg` varchar(100000) COLLATE utf8_unicode_ci DEFAULT NULL,
   `edits` varchar(1000) COLLATE utf8_unicode_ci DEFAULT NULL,
   `thread_id` int(11) DEFAULT NULL,
   `user_id` int(11) DEFAULT NULL,
@@ -90,7 +90,7 @@ CREATE TABLE `USERS` (
   `username` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
   `usertitle` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
   `joindate` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `sig` varchar(1000) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `sig` varchar(10000) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
