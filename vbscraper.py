@@ -159,13 +159,12 @@ for subname, link in sublinks:
 	    name = username.getText()
 	    link = username['href']
           else:
-            username = "Guest"
-            name = "Guest"
-	    link = ""
-          #if name not in name database:
+            continue
+	  #if name not in name database:
           usersoup=bodysoup[0].findAll('div')
           title = usersoup[1].getText()
-          inner_ind = 2
+          
+	  inner_ind = 2
           while len(usersoup[inner_ind].findAll('div'))<3:
             inner_ind+=1
           innernamesoup = usersoup[inner_ind].findAll('div')
