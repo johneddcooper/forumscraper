@@ -90,7 +90,7 @@ for s in subforums:
   sublinks.append((text, link))
 
 ##iterate through subforums
-for subname, link in sublinks:
+for subname, sublink in sublinks:
 
   #iterate through pages of subforum
   page = 1
@@ -100,9 +100,9 @@ for subname, link in sublinks:
     last_sub_title = sub_title
     try:
       ##go to subforum page, daysprune=-1: show all entries
-      browser.get(home + link + '&daysprune=%s&page=%s' %(str(backtime), str(page)))
+      browser.get(home + sublink + '&daysprune=%s&page=%s' %(str(backtime), str(page)))
     except TimeoutException:
-      print "Timeout error: " + home + link + '&daysprune=' + str(backtime)
+      print "Timeout: " + home + sublink + '&daysprune=' + str(backtime)
       keypress("key Escape ")
     src = browser.page_source
     soup = bs(src)
@@ -182,7 +182,7 @@ for subname, link in sublinks:
           edit_extracted = extract(block.prettify(), "<!-- edit note -->", "<!-- / edit note -->")
           date_extracted = extract(block.prettify(), "<!-- status icon and date -->", "<!-- / status icon and date -->")
           
-          P = dblib.post(home, subname, t.getText(), con.escape_string(date_extracted).decode("utf-8"), postlink, \
+          P = dblib.post(home, subname, sublink, t.getText(), con.escape_string(date_extracted).decode("utf-8"), postlink, \
           con.escape_string(msg_extracted).decode("utf-8"), name, title, joindate, \
           link, con.escape_string(sig_extracted).decode("utf-8"), \
           con.escape_string(edit_extracted).decode("utf-8"))

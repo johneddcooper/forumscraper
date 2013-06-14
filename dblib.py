@@ -5,18 +5,20 @@ import re
 
 class post:
 
-  def __init__(self, home, subname, thread, date, plink, msg, name, title, joindate, ulink, sig, edit):
+  def __init__(self, home, subname, sublink, thread, date, plink, msg, name, title, joindate, ulink, sig, edit):
 
     self.home = home
     self.subname = subname
     self.thread = thread
 
-    temp_date = re.search(r'\d+?[a-zA-Z]{2} [a-zA-Z]{3,10} \d{4}, \d{2}\:\d{2}', date)
+    #temp_date = re.search(r'\d+?[a-zA-Z]{2} [a-zA-Z]{3,10} \d{4}, \d{2}\:\d{2}', date)
+    regex = re.compile(r'<.+?>')
     #temp_date = re.search(r'\d\d\s(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s\d{4}', date)
-    date = temp_date.group(0)
+    date = regex.sub('', date).strip()
 
     self.date = date
     self.plink = plink
+    self.sublink = sublink
     self.msg = msg
     self.name = name
     self.title = title
@@ -88,7 +90,7 @@ def insert_data(con, cur, post):
   user_id = get_id(cur, "USERS", "username", post.name)
   if not user_id:
 		#print "post id not found\nPOST MESSAGE: %s\n\n" % (post.msg)
-		cur.execute("INSERT INTO USERS (username, usertitle, joindate, sig) VALUES (%s, %s, %s, %s)", (post.name, post.title, post.joindate, post.sig))
+		cur.execute("INSERT INTO USERS (forum_id, username, usertitle, joindate, sig) VALUES (%s, %s, %s, %s, %s)", (f_id, post.name, post.title, post.joindate, post.sig))
 		con.commit()
 		user_id = get_id(cur, "USERS", "username", post.name)
   #print post_id

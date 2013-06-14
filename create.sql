@@ -87,6 +87,7 @@ DROP TABLE IF EXISTS `USERS`;
 /*`userlink` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,*/;
 CREATE TABLE `USERS` (
   `user_id` int(11) NOT NULL AUTO_INCREMENT,
+  `forum_id` int(11) DEFAULT NULL,
   `username` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
   `usertitle` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
   `joindate` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
