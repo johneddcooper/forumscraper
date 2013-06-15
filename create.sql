@@ -59,6 +59,7 @@ CREATE TABLE `THREADS` (
   `thread_id` int(11) NOT NULL AUTO_INCREMENT,
   `thread_name` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
   `subforum_id` int(11) DEFAULT NULL,
+  `subforum_page` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`thread_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -98,15 +99,6 @@ CREATE TABLE `USERS` (
 
 
 
---
--- Dumping data for table `FORUM_POSTS`
---
-
-LOCK TABLES `FORUM_POSTS` WRITE;
-/*!40000 ALTER TABLE `FORUM_POSTS` DISABLE KEYS */;
-/*!40000 ALTER TABLE `FORUM_POSTS` ENABLE KEYS */;
-UNLOCK TABLES;
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
