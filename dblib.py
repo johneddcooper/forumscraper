@@ -52,13 +52,17 @@ def get_id( cur, table, id_name, name):
   name = regex.sub('', name)
   command = "SELECT * FROM %s WHERE %s = \"%s\";" % (table, id_name, name)
   #print command
-  cur.execute(command)
-  row = cur.fetchone()
-  
-  if row:
-		return row[0]
+  try:
+	  cur.execute(command)
+	  row = cur.fetchone()
+  except:
+  	  print "ERROR: Cannot get %s for %s" % (id_name, name)
+	  return 0
   else:
-		return 0
+	  if row:
+			return row[0]
+	  else:
+			return 0
 
 def insert_data(con, cur, post):
 
@@ -67,8 +71,12 @@ def insert_data(con, cur, post):
   f_id = get_id( cur, "FORUMS", "forum_url", post.home)
   if not f_id:
 		#print "Forum id not found"
-		cur.execute("INSERT INTO FORUMS (forum_name, forum_url) VALUES (%s, %s)", (post.home, post.home))
-		con.commit()
+		try:
+			cur.execute("INSERT INTO FORUMS (forum_name, forum_url) VALUES (%s, %s)", (post.home, post.home))
+			con.commit()
+		except:
+			print "ERROR: Could not add %s into forums table" % post.home
+			return 1
 		f_id = get_id(cur, "FORUMS", "forum_url", post.home)
   #print f_id
 
@@ -76,24 +84,36 @@ def insert_data(con, cur, post):
   sf_id = get_id( cur, "SUBFORUMS", "subforum_name", post.subname)
   if not sf_id:
 		#print "subForum id not found"
-		cur.execute("INSERT INTO SUBFORUMS (subforum_name, forum_id) VALUES (%s, %s)", (post.subname, f_id))
-		con.commit()
+		try:
+			cur.execute("INSERT INTO SUBFORUMS (subforum_name, forum_id) VALUES (%s, %s)", (post.subname, f_id))
+			con.commit()
+		except:
+			print "ERROR: Could not add %s into subforums table" % post.subname
+			return 1
 		sf_id = get_id(cur, "SUBFORUMS", "subforum_name", post.subname)
   #print sf_id
 
   thread_id = get_id( cur, "THREADS", "thread_name", post.thread)
   if not thread_id:
 		#print "thread id not found"
-		cur.execute("INSERT INTO THREADS (thread_name, subforum_id) VALUES (%s, %s)", (post.thread, sf_id))
-		con.commit()
+		try:
+			cur.execute("INSERT INTO THREADS (thread_name, subforum_id) VALUES (%s, %s)", (post.thread, sf_id))
+			con.commit()
+		except:
+			print "ERROR: Could not add %s into threads table" % post.thread
+			return 1
 		thread_id = get_id(cur, "THREADS", "thread_name", post.thread)
-  		print "New THREAD: %s" % post.thread
+  		#print "New THREAD: %s" % post.thread
 
   user_id = get_id( cur, "USERS", "username", post.name)
   if not user_id:
 		#print "post id not found\nPOST MESSAGE: %s\n\n" % (post.msg)
-		cur.execute("INSERT INTO USERS (forum_id, username, usertitle, joindate, sig) VALUES (%s, %s, %s, %s, %s)", (f_id, post.name, post.title, post.joindate, post.sig))
-		con.commit()
+		try:
+			cur.execute("INSERT INTO USERS (forum_id, username, usertitle, joindate, sig) VALUES (%s, %s, %s, %s, %s)", (f_id, post.name, post.title, post.joindate, post.sig))
+			con.commit()
+		except:
+			print "ERROR: Could not add %s into forums table" % post.name
+			return 1
 		user_id = get_id(cur, "USERS", "username", post.name)
   #print post_id
 
@@ -101,8 +121,12 @@ def insert_data(con, cur, post):
   post_id = get_id( cur, "POSTS", "postlink", post.plink)
   if not post_id:
 		#print "post id not found\nPOST MESSAGE: %s\n\n" % (post.msg)
-		cur.execute("INSERT INTO POSTS (postdate, postlink, msg, edits, thread_id, user_id) VALUES (%s, %s, %s, %s, %s, %s)", (post.date, post.plink, post.msg, post.edit, thread_id, user_id))
-		con.commit()
+		try:
+			cur.execute("INSERT INTO POSTS (postdate, postlink, msg, edits, thread_id, user_id) VALUES (%s, %s, %s, %s, %s, %s)", (post.date, post.plink, post.msg, post.edit, thread_id, user_id))
+			con.commit()
+		except:
+			print "ERROR: Could not add %s into posts table" % post.plink
+			return 1
 		post_id = get_id(cur, "POSTS", "postlink", post.plink)
   #print post_id
 
