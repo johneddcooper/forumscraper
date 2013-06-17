@@ -5,20 +5,18 @@ import re
 
 class post:
 
-  def __init__(self, home, subname, sublink, thread, date, plink, msg, name, title, joindate, ulink, sig, edit):
+  def __init__(self, home, subname, sublink, subpage, thread, date, plink, msg, name, title, joindate, ulink, sig, edit):
 
     self.home = home
     self.subname = subname
     self.thread = thread
-
-    #temp_date = re.search(r'\d+?[a-zA-Z]{2} [a-zA-Z]{3,10} \d{4}, \d{2}\:\d{2}', date)
-    regex = re.compile(r'<.+?>')
-    #temp_date = re.search(r'\d\d\s(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s\d{4}', date)
-    date = regex.sub('', date).strip()
+#temp_date = re.search(r'\d+?[a-zA-Z]{2} [a-zA-Z]{3,10} \d{4}, \d{2}\:\d{2}', date)
+#temp_date = re.search(r'\d\d\s(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s\d{4}', date)
 
     self.date = date
     self.plink = plink
     self.sublink = sublink
+    self.subpage = subpage
     self.msg = msg
     self.name = name
     self.title = title
@@ -30,7 +28,6 @@ class post:
 def setup_db():
 ##setup mysql db
 
-
   mysql_host = host
   mysql_username = user
   mysql_password = passwd
@@ -39,15 +36,50 @@ def setup_db():
     con = mdb.connect(mysql_host, mysql_username, mysql_password, 'forumsdb', charset='utf8')
     cur = con.cursor()
   except mdb.Error, e:
-    print "Error %d: %s" % (e.args[0],e.args[1])
+    print "Database Connection Error %d: %s" % (e.args[0],e.args[1])
     sys.exit(1)
 
   return con, cur
 
-def get_id( cur, table, id_name, name):
-  #This function gets the mysql generated id number of a row from a table
-	#INPUTS: Cur is a cursor object, table is a string that is the name of the table, id_name is the name of the column that is being searched, name is a string that is the name of the
+def resume(home, sublinks, con, cur):
+  f_id = get_id( cur, "FORUMS", "forum_url", home)
+  default = [sublinks, "", "", 1, "", ""]
+  print "f_id:", f_id
+  if f_id==0:
+    return default
+  command = "SELECT postlink, thread_id FROM POSTS WHERE post_id=(SELECT MAX(post_id) FROM POSTS)" 
+  cur.execute(command)
+  t_junk = cur.fetchone()
+  if t_junk is None:
+    return default
+  else:
+    p_link, t_id = t_junk
+
+  print "Resume scraping forum " + home + " at " + p_link
+
+  command = "SELECT thread_name, subforum_id, subforum_page FROM THREADS WHERE thread_id="+str(t_id)
+  cur.execute(command)
+  t_name, s_id, s_page = cur.fetchone()
+  command = "SELECT subforum_name, subforum_url FROM SUBFORUMS WHERE subforum_id="+str(s_id)
+  cur.execute(command)
+  s_name, s_url = cur.fetchone()
   
+  i=0
+  for subname, sublink in sublinks:
+    if subname == s_name:
+      return sublinks[i:], t_name, p_link, s_page, s_name, s_url
+    i+=1
+  
+  print "Resume Error... Restarting scrape"
+  print "Subforum: " + s_name
+  print "Thread: " + t_name
+  print "Link: " + t_link
+  return default
+
+def get_id( cur, table, id_name, name):
+#This function gets the mysql generated id number of a row from a table
+#INPUTS: Cur is a cursor object, table is a string that is the name of the table, id_name is the name of the column that is being searched, name is a string that is the name of the
+
   regex = re.compile(r'["\']')
   name = regex.sub('', name)
   command = "SELECT * FROM %s WHERE %s = \"%s\";" % (table, id_name, name)
@@ -65,9 +97,7 @@ def get_id( cur, table, id_name, name):
 			return 0
 
 def insert_data(con, cur, post):
-
-  #print post
-
+#print post
   f_id = get_id( cur, "FORUMS", "forum_url", post.home)
   if not f_id:
 		#print "Forum id not found"
@@ -116,8 +146,6 @@ def insert_data(con, cur, post):
 			return 1
 		user_id = get_id(cur, "USERS", "username", post.name)
   #print post_id
-
-
   post_id = get_id( cur, "POSTS", "postlink", post.plink)
   if not post_id:
 		#print "post id not found\nPOST MESSAGE: %s\n\n" % (post.msg)
