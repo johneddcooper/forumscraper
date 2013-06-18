@@ -44,7 +44,7 @@ def extract(string, start_marker, end_marker):
   return string[start_loc+len(start_marker):end_loc]
 
 
-def scrape_thread(browser, s_page, url, thread, thread_page, subname, sublink, con, cur):
+def scrape_thread(image_dir, browser, s_page, url, thread, thread_page, subname, sublink, con, cur):
   post = 0
   posts = []
   last_thread_title = ""
@@ -86,11 +86,7 @@ def scrape_thread(browser, s_page, url, thread, thread_page, subname, sublink, c
       
       userlinks = bodysoup[0].findAll('a', attrs={'class':'bigusername'})
       userpic_src = imaget.get_image_src(bodysoup[0]) #get the source for the user's picture
-      print "USER PIC SOURCE: %s" % userpic_src 
-      print "Downlaoding image to test%d.jpg" % i
-      filename = "test%d.jpg" % i
-      if userpic_src:
-        imaget.download_image(filename, 'b', home + userpic_src)
+      if userpic_src: userpic_src = home + userpic_src
       if len(userlinks) > 0:
         username = userlinks[0]
         name = username.getText()
@@ -118,7 +114,8 @@ def scrape_thread(browser, s_page, url, thread, thread_page, subname, sublink, c
       con.escape_string(msg_extracted).decode("utf-8"), name, title, joindate, \
       link, con.escape_string(sig_extracted).decode("utf-8"), \
       con.escape_string(edit_extracted).decode("utf-8"))
-      dblib.insert_data(con, cur, P)
+      (post_id, user_id) = dblib.insert_data(con, cur, P)
+      imaget.get_user_image(user_id, image_dir, userpic_src)
 			##########################################
 			##########################################
       sys.stderr.write("REFRESH")##########################################
@@ -130,6 +127,8 @@ def main():
 
 				parse_args()
 				backtime = -1
+
+				image_dir = imaget.create_image_dir("images")
 
 				##initialize selenium
 				browser = webdriver.Firefox()
@@ -172,7 +171,7 @@ def main():
 						print "RESUME SCRAPING " + home
 						print "RESUME THREAD: " + start_tlink + "(%s)"%start_tlink
 						print "t_page:", t_page
-						P = scrape_thread(browser, s_page, start_tlink, start_tname, t_page, s_name, s_link, con, cur)
+						P = scrape_thread(image_dir, browser, s_page, start_tlink, start_tname, t_page, s_name, s_link, con, cur)
 						restart = True
 				else:
 					restart = False
@@ -212,7 +211,7 @@ def main():
 							#print t['href']
 							#print "Total pages in thread:", thread_pages
 							#now traverse all the pages in thread, downloading content
-							scrape_thread(browser, s_page, t['href'], t.getText(), 1, subname, sublink, con, cur)
+							scrape_thread(image_dir, browser, s_page, t['href'], t.getText(), 1, subname, sublink, con, cur)
 						
 						#go to next page in subforum
 

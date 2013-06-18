@@ -31,14 +31,19 @@ Todo:
 
 -Restarts
 	-Restarts work, but the implementation does not allow for multiple instances to run on the same DB
+	-We need a way to know which threads have had posts added to them. Current implementations ignore a thread after
+	 scraping it once.
 
 =============================================================================================================================
 
 -Fix bugs with watchdog
-	-Sometimes hangs (Especially on runtime errors of the subprocess)
-		-blocking on read from stderr. May be fixed by making signal handlers or finding a way to cancel a read or break the pipe
-			-Or maybe by using unix sockets (LAST RESORT
 	-Exit Gracefully (Close browser window on SIG_KILL)
+	-Sometimes hangs (Especially on runtime errors of the subprocess)
+		-blocking on read from stderr. May be fixed by making signal handlers or finding a way to cancel a read or 
+		 break the pipe. Or maybe by using unix sockets (LAST RESORT
+		-Timeouts cause the scraper to restart, this does not always resolve the timeout issue. The same webpage
+		 is loaded again, trigerring another timeout. This may be resolved by maintaining a count of timeout on
+		 pages in the DB.
 
 =============================================================================================================================
 

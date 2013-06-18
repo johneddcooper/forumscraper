@@ -167,6 +167,8 @@ def insert_data(con, cur, post):
 			print post.date
 			return 1
 		post_id = get_id(cur, "POSTS", "postlink", post.plink)
+
+  return (post_id, user_id)
   #print post_id
 
   #if not get_id(cur, "THREADS", "thread_name", "dick f"):

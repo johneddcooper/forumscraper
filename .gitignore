@@ -1,6 +1,7 @@
 #gitignore file, these files will NOT be tracked by git
 
 local_settings.py
+images/
 *.pyc
 *.swp
 *.swo
