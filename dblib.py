@@ -76,6 +76,16 @@ def resume(home, sublinks, con, cur):
   print "Link: " + t_link
   return default
 
+"""
+def last_insert_id(cur, con):
+
+  command = "SELECT last_insert_id();"
+  try:
+    cur.execute(command)
+  except: mdb.Error
+    print "Error getting last inserted ID"
+"""
+
 def get_id( cur, table, id_name, name):
 #This function gets the mysql generated id number of a row from a table
 #INPUTS: Cur is a cursor object, table is a string that is the name of the table, id_name is the name of the column that is being searched, name is a string that is the name of the
@@ -87,9 +97,9 @@ def get_id( cur, table, id_name, name):
   try:
 	  cur.execute(command)
 	  row = cur.fetchone()
-  except:
-  	  print "ERROR: Cannot get %s for %s" % (id_name, name)
-	  return 0
+  except mdb.Error:
+		print "ERROR: Cannot get %s for %s" % (id_name, name)
+		return 0
   else:
 	  if row:
 			return row[0]
@@ -152,8 +162,9 @@ def insert_data(con, cur, post):
 		try:
 			cur.execute("INSERT INTO POSTS (postdate, postlink, msg, edits, thread_id, user_id) VALUES (%s, %s, %s, %s, %s, %s)", (post.date, post.plink, post.msg, post.edit, thread_id, user_id))
 			con.commit()
-		except:
+		except mdb.Error:
 			print "ERROR: Could not add %s into posts table" % post.plink
+			print post.date
 			return 1
 		post_id = get_id(cur, "POSTS", "postlink", post.plink)
   #print post_id

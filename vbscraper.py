@@ -8,16 +8,14 @@ import MySQLdb as mdb
 
 import re, urlparse
 import os, sys, getopt
-import re, copy
+import copy
 
 from local_settings import *
-import dblib
+import dblib, imaget
 
 mysql_host = host
 mysql_username = user
 mysql_password = passwd
-con = ""
-cur = ""
 striptags = re.compile(r'<.+?>')
 
 def usage():
@@ -32,6 +30,7 @@ def parse_args():
   home = sys.argv[1]
   if home[-1] != '/':
     home += "/"
+  return home
 
 def keypress(sequence):
   p=Popen(['xte'], stdin=PIPE)
@@ -45,7 +44,7 @@ def extract(string, start_marker, end_marker):
   return string[start_loc+len(start_marker):end_loc]
 
 
-def scrape_thread(url, thread, thread_page, subname, sublink):
+def scrape_thread(browser, s_page, url, thread, thread_page, subname, sublink, con, cur):
   post = 0
   posts = []
   last_thread_title = ""
@@ -58,6 +57,7 @@ def scrape_thread(url, thread, thread_page, subname, sublink):
       browser.get(home + url + "&page=%s" % (str(thread_page)))
     except TimeoutException:
       print "Timeout: " + home + url
+      sys.stderr.write("TIMEOUT")
       keypress("key Escape ")
     tsrc = browser.page_source
     tsoup = bs(tsrc)
@@ -76,15 +76,21 @@ def scrape_thread(url, thread, thread_page, subname, sublink):
       i+=1 #first post is 1
       trsoup = block.findAll('tr') #split block table
       header = trsoup[0].findAll('td')
-      postdate = header[0].getText(' ')
-      postdate = striptags.sub('', postdate).strip(' \n')          
-      #print "\n\n\nGrabbed Postdate: " + postdate
+      postdate = str(header[0])
+      postdate = striptags.sub('', postdate).strip()
+      print "\n\n\nGrabbed Postdate: " + postdate
       #print "Grabbed Header: " + str(header)
       postlink = url+"&page="+str(thread_page)
       #postlink = header[1].findAll('a')[1]['href'] #index 1 returns the showthread link rather than showpost
       bodysoup = trsoup[1].findAll('td') #split body of message into username panel and post info
       
       userlinks = bodysoup[0].findAll('a', attrs={'class':'bigusername'})
+      userpic_src = imaget.get_image_src(bodysoup[0]) #get the source for the user's picture
+      print "USER PIC SOURCE: %s" % userpic_src 
+      print "Downlaoding image to test%d.jpg" % i
+      filename = "test%d.jpg" % i
+      if userpic_src:
+        imaget.download_image(filename, 'b', home + userpic_src)
       if len(userlinks) > 0:
         username = userlinks[0]
         name = username.getText()
@@ -108,96 +114,108 @@ def scrape_thread(url, thread, thread_page, subname, sublink):
       sig_extracted = extract(block.prettify(), "<!-- sig -->", "<!-- / sig -->")
       edit_extracted = extract(block.prettify(), "<!-- edit note -->", "<!-- / edit note -->")
       date_extracted = extract(block.prettify(), "<!-- status icon and date -->", "<!-- / status icon and date -->") 
-      P = dblib.post(home, subname, sublink, s_page, thread, con.escape_string(date_extracted).decode("utf-8"), postlink, \
+      P = dblib.post(home, subname, sublink, s_page, thread, con.escape_string(postdate).decode("utf-8"), postlink, \
       con.escape_string(msg_extracted).decode("utf-8"), name, title, joindate, \
       link, con.escape_string(sig_extracted).decode("utf-8"), \
       con.escape_string(edit_extracted).decode("utf-8"))
       dblib.insert_data(con, cur, P)
+			##########################################
+			##########################################
+      sys.stderr.write("REFRESH")##########################################
+			##########################################
+			##########################################
     thread_page+=1
-parse_args()
-backtime = -1
 
-##initialize selenium
-browser = webdriver.Firefox()
-browser.set_page_load_timeout(5)
-try:
-  browser.get(home)
-except TimeoutException:
-  print "Timeout: " + home
-  keypress("Key Escape ")
+def main():
 
-##get subforums from main directory
-main_src = browser.page_source
-main_soup = bs(main_src)
-subforums = main_soup.findAll('td', attrs={'class':'alt1Active'})
-sublinks = []
-for s in subforums:
-  links = s.findAll('a')
-  for a in links:
-    if not "http" in a['href']:
-      break
-  link = a['href']
-  text = a.getText()
-  sublinks.append((text, link))
+				parse_args()
+				backtime = -1
 
-##setup mysql db
-con, cur = dblib.setup_db()
+				##initialize selenium
+				browser = webdriver.Firefox()
+				browser.set_page_load_timeout(5)
+				try:
+					browser.get(home)
+				except TimeoutException:
+					print "Timeout: " + home
+					sys.stderr.write("TIMEOUT")
+					keypress("Key Escape ")
 
-##attempt to resume last session
-sublinks, start_tname, start_tlink, s_page, s_name, s_link = dblib.resume(home, sublinks, con, cur)
+				##get subforums from main directory
+				main_src = browser.page_source
+				sys.stderr.write("REFRESH")
+				main_soup = bs(main_src)
+				subforums = main_soup.findAll('td', attrs={'class':'alt1Active'})
+				sublinks = []
+				for s in subforums:
+					links = s.findAll('a')
+					for a in links:
+						if not "http" in a['href']:
+							break
+					link = a['href']
+					text = a.getText()
+					sublinks.append((text, link))
 
-if start_tlink != "":
-  try:
-    t_page=int(start_tlink.split('page=')[1])
-    start_tlink = start_tlink.split('&page=')[0]
-  except:
-    print "Potentially malformed start URL: " + start_tlink
-  else:
-    print "RESUME SCRAPING " + home
-    print "RESUME THREAD: " + start_tlink + "(%s)"%start_tlink
-    print "t_page:", t_page
-    P = scrape_thread(start_tlink, start_tname, t_page, s_name, s_link)
-    restart = True
-else:
-  restart = False
-##iterate through subforums
-for subname, sublink in sublinks:
+				##setup mysql db
+				con, cur = dblib.setup_db()
 
-  #iterate through pages of subforum
-  last_sub_title = ""
-  sub_title = "test"
-  while last_sub_title != sub_title:
-    last_sub_title = sub_title
-    try:
-      ##go to subforum page, daysprune=-1: show all entries
-      browser.get(home + sublink + '&daysprune=%s&page=%s' %(str(backtime), str(s_page)))
-    except TimeoutException:
-      print "Timeout: " + home + sublink + '&daysprune=' + str(backtime)
-      keypress("key Escape ")
-    src = browser.page_source
-    soup = bs(src)
-    if len(soup.title)==0:
-      break
-    sub_title= soup.title.string
-    if sub_title == last_sub_title:
-      break
-    #get subforums
-  
-    threads = soup.findAll('a',  attrs={'id':lambda x:x and x.startswith('thread_title')})
-    
-    if restart:
-      for i, t in enumerate(threads):
-        if t.getText() == start_tname:
-          threads = threads[i+1:]
-      restart=False
-    #scrape subforum
-    
-    for t in threads:
-      #print t['href']
-      #print "Total pages in thread:", thread_pages
-      #now traverse all the pages in thread, downloading content
-      scrape_thread(t['href'], t.getText(), 1, subname, sublink)
-    
-    #go to next page in subforum
+				##attempt to resume last session
+				sublinks, start_tname, start_tlink, s_page, s_name, s_link = dblib.resume(home, sublinks, con, cur)
 
-#browser.close()
+				if start_tlink != "":
+					try:
+						t_page=int(start_tlink.split('page=')[1])
+						start_tlink = start_tlink.split('&page=')[0]
+					except:
+						print "Potentially malformed start URL: " + start_tlink
+					else:
+						print "RESUME SCRAPING " + home
+						print "RESUME THREAD: " + start_tlink + "(%s)"%start_tlink
+						print "t_page:", t_page
+						P = scrape_thread(browser, s_page, start_tlink, start_tname, t_page, s_name, s_link, con, cur)
+						restart = True
+				else:
+					restart = False
+				##iterate through subforums
+				for subname, sublink in sublinks:
+
+					#iterate through pages of subforum
+					last_sub_title = ""
+					sub_title = "test"
+					while last_sub_title != sub_title:
+						last_sub_title = sub_title
+						try:
+							##go to subforum page, daysprune=-1: show all entries
+							browser.get(home + sublink + '&daysprune=%s&page=%s' %(str(backtime), str(s_page)))
+						except TimeoutException:
+							print "Timeout: " + home + sublink + '&daysprune=' + str(backtime)
+							keypress("key Escape ")
+						src = browser.page_source
+						soup = bs(src)
+						if len(soup.title)==0:
+							break
+						sub_title= soup.title.string
+						if sub_title == last_sub_title:
+							break
+						#get subforums
+					
+						threads = soup.findAll('a',  attrs={'id':lambda x:x and x.startswith('thread_title')})
+						
+						if restart:
+							for i, t in enumerate(threads):
+								if t.getText() == start_tname:
+									threads = threads[i+1:]
+							restart=False
+						#scrape subforum
+						
+						for t in threads:
+							#print t['href']
+							#print "Total pages in thread:", thread_pages
+							#now traverse all the pages in thread, downloading content
+							scrape_thread(browser, s_page, t['href'], t.getText(), 1, subname, sublink, con, cur)
+						
+						#go to next page in subforum
+
+				#browser.close()
+if __name__ == "__main__":
+	main()
