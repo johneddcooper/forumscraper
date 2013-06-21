@@ -1,11 +1,24 @@
+"""This library provides functions to manipulate the database"""
 import MySQLdb as mdb
 import sys
 from local_settings import *
 import re
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 class post:
+  """This object contains all of the information relevant to a post"""
 
-  def __init__(self, home, subname, sublink, subpage, thread, date, plink, msg, name, title, joindate, ulink, sig, edit):
+  def __init__(self, home, subname, sublink, subpage, thread, date, plink, msg, name, title, joindate, ulink, sig, edit, images = []):
+    """"Initialize the structure
+
+	INPUT: string (forum homepage), string (name of subforum), string (link to subforum page),
+		   int (subforum page), string (post's thread), string (date), string (link to post),
+		   string (message content), string (username), string (user title), string (user join date),
+		   string (user link), string (user signature), string (edit content), list of strings (image urls)
+	RETURNS: post object"""
 
     self.home = home
     self.subname = subname
@@ -24,9 +37,14 @@ class post:
     self.ulink = ulink
     self.sig = sig
     self.edit = edit
+    self.images = images
+    logger.debug(" new post created\n\thome = %s\n\tdate = %s\n\tusername = %s\n images = %s", home, date, name, str(images))
 
 def setup_db():
-##setup mysql db
+  """Setup mysql db
+
+  INPUT: None
+  RETURNS: None"""
 
   mysql_host = host
   mysql_username = user
@@ -36,15 +54,20 @@ def setup_db():
     con = mdb.connect(mysql_host, mysql_username, mysql_password, 'forumsdb', charset='utf8')
     cur = con.cursor()
   except mdb.Error, e:
-    print "Database Connection Error %d: %s" % (e.args[0],e.args[1])
+    logger.error("Database Connection Error %d: %s", e.args[0], e.args[1])
     sys.exit(1)
 
   return con, cur
 
 def resume(home, sublinks, con, cur):
+  """Resumes scraping from previous stopping point
+
+  INPUT: string (forum homepage), list of strings (links to subforums), MySQLdb Connection object
+		 MySQLdb Cursor object
+  RETURNS: list (subforum link, thread name, page link, start page, subforum name, subforum url)"""
   f_id = get_id( cur, "FORUMS", "forum_url", home)
   default = [sublinks, "", "", 1, "", ""]
-  print "f_id:", f_id
+  #print "f_id:", f_id
   if f_id==0:
     return default
   command = "SELECT postlink, thread_id FROM POSTS WHERE post_id=(SELECT MAX(post_id) FROM POSTS)" 
@@ -56,6 +79,7 @@ def resume(home, sublinks, con, cur):
     p_link, t_id = t_junk
 
   print "Resume scraping forum " + home + " at " + p_link
+  logger.info("Resume scraping forum %s at %s", home, p_link)
 
   command = "SELECT thread_name, subforum_id, subforum_page FROM THREADS WHERE thread_id="+str(t_id)
   cur.execute(command)
@@ -71,6 +95,7 @@ def resume(home, sublinks, con, cur):
     i+=1
   
   print "Resume Error... Restarting scrape"
+  logger.error("Resume Error... Restarting scrape")
   print "Subforum: " + s_name
   print "Thread: " + t_name
   print "Link: " + t_link
@@ -87,8 +112,10 @@ def last_insert_id(cur, con):
 """
 
 def get_id( cur, table, id_name, name):
-#This function gets the mysql generated id number of a row from a table
-#INPUTS: Cur is a cursor object, table is a string that is the name of the table, id_name is the name of the column that is being searched, name is a string that is the name of the
+  """This function gets the mysql generated id number of a row from a table
+
+  INPUTS: MySQLdb Cursor object, string (table name), string (column name), string(search string)
+  RETURNS: int (related ID or 0)"""
 
   regex = re.compile(r'["\']')
   name = regex.sub('', name)
@@ -99,6 +126,7 @@ def get_id( cur, table, id_name, name):
 	  row = cur.fetchone()
   except mdb.Error:
 		print "ERROR: Cannot get %s for %s" % (id_name, name)
+		logger.error("Cannot get %s for %s", id_name, name)
 		return 0
   else:
 	  if row:
@@ -107,7 +135,11 @@ def get_id( cur, table, id_name, name):
 			return 0
 
 def insert_data(con, cur, post):
-#print post
+  """Inserts the data into the database
+
+  INPUTS: MySQLdb Connection object, MySQLdb Cursor object, Post object
+  RETURNS: tuple (post id, user id)"""
+  #print post
   f_id = get_id( cur, "FORUMS", "forum_url", post.home)
   if not f_id:
 		#print "Forum id not found"
@@ -116,6 +148,7 @@ def insert_data(con, cur, post):
 			con.commit()
 		except:
 			print "ERROR: Could not add %s into forums table" % post.home
+			logger.error("Could not add %s into forums table", post.home)
 			return 1
 		f_id = get_id(cur, "FORUMS", "forum_url", post.home)
   #print f_id
@@ -129,6 +162,7 @@ def insert_data(con, cur, post):
 			con.commit()
 		except:
 			print "ERROR: Could not add %s into subforums table" % post.subname
+			logger.error("Could not add %s into subforums table", post.subname)
 			return 1
 		sf_id = get_id(cur, "SUBFORUMS", "subforum_name", post.subname)
   #print sf_id
@@ -141,6 +175,7 @@ def insert_data(con, cur, post):
 			con.commit()
 		except:
 			print "ERROR: Could not add %s into threads table" % post.thread
+			logger.error("Could not add %s into threads table", post.thread)
 			return 1
 		thread_id = get_id(cur, "THREADS", "thread_name", post.thread)
   		#print "New THREAD: %s" % post.thread
@@ -152,7 +187,8 @@ def insert_data(con, cur, post):
 			cur.execute("INSERT INTO USERS (forum_id, username, usertitle, joindate, sig) VALUES (%s, %s, %s, %s, %s)", (f_id, post.name, post.title, post.joindate, post.sig))
 			con.commit()
 		except:
-			print "ERROR: Could not add %s into forums table" % post.name
+			print "ERROR: Could not add %s into users table" % post.name
+			logger.error("Could not add %s into users table", post.name)
 			return 1
 		user_id = get_id(cur, "USERS", "username", post.name)
   #print post_id
@@ -164,9 +200,23 @@ def insert_data(con, cur, post):
 			con.commit()
 		except mdb.Error:
 			print "ERROR: Could not add %s into posts table" % post.plink
+			logger.error("Could not add %s into posts table", post.plink)
 			print post.date
 			return 1
 		post_id = get_id(cur, "POSTS", "postlink", post.plink)
+
+  for image in post.images:
+  	image_id = get_id(cur, "IMAGES", "image_src", image)
+  	if not image_id:
+  		try:
+  			cur.execute("INSERT INTO IMAGES (thread_id, user_id, post_id, image_src) VALUES (%s, %s, %s, %s)", (thread_id, user_id, post_id, image))
+  			con.commit()
+			print "ADDED IMAGE TO DB"
+		except mdb.Error:
+			print "ERROR: Could not add %s into images table" % image
+			logger.error("Could not add %s into images table", image)
+			print post.date
+			continue
 
   return (post_id, user_id)
   #print post_id

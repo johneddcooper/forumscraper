@@ -1,0 +1,511 @@
+INFO:__main__:Home url: http://www.gofuckbiz.com/
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:50013/hub/session {"sessionId": null, "desiredCapabilities": {"platform": "ANY", "browserName": "firefox", "version": "", "javascriptEnabled": true}}
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:50013/hub/session/2af3f17d-54da-4d0a-8f64-1038c46bbe83/timeouts {"sessionId": "2af3f17d-54da-4d0a-8f64-1038c46bbe83", "type": "page load", "ms": 5000.0}
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:50013/hub/session/2af3f17d-54da-4d0a-8f64-1038c46bbe83/url {"url": "http://www.gofuckbiz.com/", "sessionId": "2af3f17d-54da-4d0a-8f64-1038c46bbe83"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:50013/hub/session/2af3f17d-54da-4d0a-8f64-1038c46bbe83/source {"sessionId": "2af3f17d-54da-4d0a-8f64-1038c46bbe83"}
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:50013/hub/session/2af3f17d-54da-4d0a-8f64-1038c46bbe83/url {"url": "http://www.gofuckbiz.com/showthread.php?t=9788&page=353", "sessionId": "2af3f17d-54da-4d0a-8f64-1038c46bbe83"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:50013/hub/session/2af3f17d-54da-4d0a-8f64-1038c46bbe83/source {"sessionId": "2af3f17d-54da-4d0a-8f64-1038c46bbe83"}
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:50013/hub/session/2af3f17d-54da-4d0a-8f64-1038c46bbe83/url {"url": "http://www.gofuckbiz.com/showthread.php?t=9788&page=354", "sessionId": "2af3f17d-54da-4d0a-8f64-1038c46bbe83"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:50013/hub/session/2af3f17d-54da-4d0a-8f64-1038c46bbe83/source {"sessionId": "2af3f17d-54da-4d0a-8f64-1038c46bbe83"}
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:50013/hub/session/2af3f17d-54da-4d0a-8f64-1038c46bbe83/url {"url": "http://www.gofuckbiz.com/showthread.php?t=9788&page=355", "sessionId": "2af3f17d-54da-4d0a-8f64-1038c46bbe83"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:50013/hub/session/2af3f17d-54da-4d0a-8f64-1038c46bbe83/source {"sessionId": "2af3f17d-54da-4d0a-8f64-1038c46bbe83"}
+INFO:__main__:Home url: http://www.gofuckbiz.com/
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:58178/hub/session {"sessionId": null, "desiredCapabilities": {"platform": "ANY", "browserName": "firefox", "version": "", "javascriptEnabled": true}}
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/timeouts {"sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69", "type": "page load", "ms": 5000.0}
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/url {"url": "http://www.gofuckbiz.com/", "sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/source {"sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+INFO:dblib:Resume scraping forum http://www.gofuckbiz.com/ at showthread.php?t=9788&page=354
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/url {"url": "http://www.gofuckbiz.com/showthread.php?t=9788&page=354", "sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/source {"sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 08.12.2012, 17:02
+ username = Dr.Gonzo
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'images/smilies/bm.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 12.12.2012, 17:29
+ username = den2099
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 12.12.2012, 21:09
+ username = huanpedro
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 13.12.2012, 10:06
+ username = bess
+ images = [u'images/icons/icon1.gif', u'http://synews.ru/uploads/posts/2008-09/1221911958_compo.jpg']
+ERROR:dblib:Could not add http://synews.ru/uploads/posts/2008-09/1221911958_compo.jpg into images table
+INFO:imaget:downloading post image
+ERROR:imaget:No image id
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 15.12.2012, 21:34
+ username = mixa007
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'http://synews.ru/uploads/posts/2008-09/1221911958_compo.jpg']
+ERROR:dblib:Could not add http://synews.ru/uploads/posts/2008-09/1221911958_compo.jpg into images table
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+ERROR:imaget:No image id
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 16.12.2012, 00:33
+ username = Пиллигрим
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 16.12.2012, 09:22
+ username = nkama
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 17.12.2012, 12:03
+ username = Grut
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'/images/smilies/mail1.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 17.12.2012, 12:25
+ username = DJA
+ images = [u'images/icons/icon1.gif', u'images/smilies/popcorm2.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 17.12.2012, 12:35
+ username = Пиллигрим
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'images/smilies/popcorm2.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/url {"url": "http://www.gofuckbiz.com/showthread.php?t=9788&page=355", "sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/source {"sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 17.12.2012, 13:53
+ username = lol
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'/images/smilies/pardon.gif', u'images/smilies/smoke.gif', u'images/smilies/facepalm.gif', u'images/smilies/crigon_01.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 18.12.2012, 04:15
+ username = Алёша
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 18.12.2012, 16:12
+ username = rombot
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 18.12.2012, 16:25
+ username = mr. werewolf
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 18.12.2012, 16:43
+ username = rombot
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 18.12.2012, 16:49
+ username = bess
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 18.12.2012, 16:52
+ username = rombot
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 18.12.2012, 16:55
+ username = just for fun
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 18.12.2012, 17:11
+ username = bess
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 18.12.2012, 18:20
+ username = 40obfam
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'http://synews.ru/uploads/posts/2008-09/1221911958_compo.jpg', u'images/smilies/smoke.gif']
+ERROR:dblib:Could not add http://synews.ru/uploads/posts/2008-09/1221911958_compo.jpg into images table
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+ERROR:imaget:No image id
+INFO:imaget:downloading post image
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/url {"url": "http://www.gofuckbiz.com/showthread.php?t=9788&page=356", "sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/source {"sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 19.12.2012, 00:57
+ username = dtd
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 19.12.2012, 01:01
+ username = bess
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 19.12.2012, 01:03
+ username = dtd
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 19.12.2012, 01:52
+ username = sspy
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 19.12.2012, 02:10
+ username = bess
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 19.12.2012, 04:08
+ username = Алёша
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 19.12.2012, 20:25
+ username = farelf
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading http://www.gofuckbiz.com/image.php?u=2907&dateline=1330744569
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 19.12.2012, 22:35
+ username = nkama
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 19.12.2012, 22:39
+ username = dveredel
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 21.12.2012, 00:15
+ username = rombot
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/url {"url": "http://www.gofuckbiz.com/showthread.php?t=9788&page=357", "sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/source {"sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 23.12.2012, 00:01
+ username = Emil
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 23.12.2012, 00:24
+ username = krabson
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 23.12.2012, 00:44
+ username = sspy
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'images/smilies/popcorm2.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 23.12.2012, 00:49
+ username = bess
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 23.12.2012, 20:42
+ username = Алёша
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 23.12.2012, 21:25
+ username = dmjROV
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'images/smilies/crigon_01.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 23.12.2012, 21:37
+ username = Delorean
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 26.12.2012, 21:31
+ username = tizerland
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 26.12.2012, 22:24
+ username = Алёша
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 26.12.2012, 22:37
+ username = bess
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/url {"url": "http://www.gofuckbiz.com/showthread.php?t=9788&page=358", "sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/source {"sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 27.12.2012, 01:41
+ username = jaguar
+ images = [u'images/icons/icon1.gif', u'/images/smilies/drinks.gif', u'/images/smilies/gofuck.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 27.12.2012, 17:44
+ username = Крушу Ебала
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 27.12.2012, 17:51
+ username = soul
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'/images/smilies/drinks.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 27.12.2012, 19:55
+ username = Крушу Ебала
+ images = [u'images/icons/icon1.gif', u'/images/smilies/drinks.gif', u'images/smilies/baaa.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 29.12.2012, 07:04
+ username = Strikelol
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 29.12.2012, 07:29
+ username = Emil
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'images/smilies/crigon_01.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 29.12.2012, 10:25
+ username = Fewal
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading http://www.gofuckbiz.com/image.php?u=18666&dateline=1359966162
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 29.12.2012, 15:56
+ username = matroskin
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 29.12.2012, 16:44
+ username = Алёша
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 00:49
+ username = Алёша
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/url {"url": "http://www.gofuckbiz.com/showthread.php?t=9788&page=359", "sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/source {"sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 00:53
+ username = digg
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 22:03
+ username = benzole
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 22:21
+ username = just for fun
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 22:22
+ username = benzole
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 22:26
+ username = Розкидач
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading http://www.gofuckbiz.com/image.php?u=18213&dateline=1336726548
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 22:32
+ username = benzole
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 22:35
+ username = Розкидач
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 22:36
+ username = sspy
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 22:40
+ username = benzole
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 22:50
+ username = отец Эфтаназий
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/url {"url": "http://www.gofuckbiz.com/showthread.php?t=9788&page=360", "sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/source {"sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 23:12
+ username = Розкидач
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 30.12.2012, 23:14
+ username = katardy
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'images/smilies/smile3.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 31.12.2012, 01:00
+ username = Алёша
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif', u'images/smilies/facepalm.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 31.12.2012, 22:04
+ username = Алёша
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 31.12.2012, 22:12
+ username = Крушу Ебала
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 31.12.2012, 22:32
+ username = Пиллигрим
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 31.12.2012, 22:42
+ username = Крушу Ебала
+ images = [u'images/icons/icon1.gif', u'/images/smilies/drinks.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 03.01.2013, 01:16
+ username = Алёша
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 03.01.2013, 03:17
+ username = bess
+ images = [u'images/icons/icon1.gif', u'images/compro/buttons/viewpost.gif']
+INFO:imaget:downloading post image
+INFO:imaget:downloading post image
+DEBUG:dblib: new post created
+home = http://www.gofuckbiz.com/
+date = 03.01.2013, 11:28
+ username = Алёша
+ images = [u'images/icons/icon1.gif']
+INFO:imaget:downloading post image
+DEBUG:selenium.webdriver.remote.remote_connection:POST http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/url {"url": "http://www.gofuckbiz.com/showthread.php?t=9788&page=361", "sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}
+DEBUG:selenium.webdriver.remote.remote_connection:GET http://127.0.0.1:58178/hub/session/860397e8-8e8f-42da-b587-0965ad59cd69/source {"sessionId": "860397e8-8e8f-42da-b587-0965ad59cd69"}

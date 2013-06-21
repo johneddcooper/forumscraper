@@ -1,3 +1,4 @@
+"""This module acts as a wrapper around vbscraper. It watches for timeouts and restarts scraping on hang"""
 import threading
 import signal
 import subprocess as sub
@@ -9,6 +10,7 @@ flag = 1
 sc1 = None
 
 class Scraper:
+	"""This class contains subprocesses that are the individual scrapers"""
 
 	def __init__(self, args):
 		self.event = threading.Event()
@@ -39,6 +41,7 @@ def hello():
 #t.start()
 
 def kill_proc(signum, frame):
+	"""Kills a process, then restarts it. SIGALRM signal handler"""
 	global flag
 	global sc1
 	if not flag:

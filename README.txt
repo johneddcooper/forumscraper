@@ -7,18 +7,15 @@ sudo pip install BeautifulSoup
 sudo apt-get install xautomation
 
 usage:
-to create database, run
-  mysql -u 'mysql_username' < create.sql
+to create database (THIS PURGES A DB IF IT EXISTS), run
+  make db
 
 copy the settings file, then edit it to contain the correct login credentials
   cp local_settings.py.sample local_settings.py
 
-then run
-  python db_utf8.py
-(changes mysql table columns to all accept UTF-8)
-
 finally, run
-  python vbscraper.py URL
+  make run (for the standalone scraper)
+  make watchdog (to run the scraper with a timeout watchdog)
 
 URL must contain http and end with a /
 good: http://forum.doom9.org/
@@ -55,7 +52,7 @@ Todo:
 
 -Make code nicer
 	-Add more comments
-	-Create docstrings to compile documentation
+	-Create docstrings to compile documentation #DONE
 	-Compile into a python package?
 	-Modularize the VBulletin code
 
@@ -68,9 +65,9 @@ Todo:
 =============================================================================================================================
 
 -Download images
-	-create directory structure for images
-	-link image location to the DB (forum, thread, user, post)
-	don't download user images more than once
+	-create directory structure for images #DONE
+	-link image location to the DB (forum, thread, user, post) #DONE
+	-don't download user images more than once #DONE
 
 =============================================================================================================================
 

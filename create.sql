@@ -97,6 +97,21 @@ CREATE TABLE `USERS` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+DROP TABLE IF EXISTS `IMAGES`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+
+/*`userlink` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,*/;
+CREATE TABLE `IMAGES` (
+  `image_id` int(11) NOT NULL AUTO_INCREMENT,
+  `thread_id` int(11) DEFAULT NULL,
+  `user_id` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `post_id` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `image_src` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`image_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
 
 
 
