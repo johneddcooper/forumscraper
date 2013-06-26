@@ -1,0 +1,10 @@
+{% if forum_list %}
+    <p> This is the list of forums. Select one
+    <ul>
+    {% for forum in forum_list %}
+        <li><a href="/forums/{{forum.forum_id}}/">{{forum.forum_name}}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No forums are available
+{% endif %}

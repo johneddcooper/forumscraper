@@ -1,0 +1,30 @@
+{% if user %}
+    {% autoescape off %}
+    <p>Stats for {{user.username}}:
+    <br>Forum: 
+    {% if forum %}
+      <a href={{forum.forum_url}}>{{forum.forum_name}}</a>
+    {% else %}
+      forum ID not found
+    {% endif %}
+    <br>Title: {{user.title}}
+    <br>Join Date: {{user.joindate}}
+    <br>Signature:
+    <br>{{user.sig|cut:"\\n"}}
+    <br>
+    <br>
+    <br>All posts made by this user
+    <br>
+    <br>
+    {% if post_list %}
+        {% for post in post_list %}
+            <br>message date: {{post.postdate}}
+            <br>{{ post.msg|cut:"\\n"}}
+        {% endfor %}
+    {% else %}
+        <p> No posts of this user found
+    {% endif %}
+    {% endautoescape %}
+{% else %}
+    <p>User not found
+{% endif %}

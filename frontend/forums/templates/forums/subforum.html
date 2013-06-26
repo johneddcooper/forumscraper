@@ -1,0 +1,10 @@
+{% if thread_list %}
+    <p> This is the list of threads for {{sub.subforum_name}}
+    <ul>
+    {% for thread in thread_list %}
+        <li><a href="/forums/{{forum_id}}/{{thread.subforum_id}}/{{thread.thread_id}}/">{{thread.thread_name}}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No Subforums are available
+{% endif %}

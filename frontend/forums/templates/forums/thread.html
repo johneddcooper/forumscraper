@@ -1,0 +1,17 @@
+{% load forum_extras %}
+{% if post_list %}
+    {% autoescape off %}
+    <p> These are the posts in
+    <ul>
+    {% for post in post_list %}
+        <li>
+        <div>Posted: {{post.postdate}}
+        <br>By: {{post.user_id|lookup_user}}
+        <br>{{ post.msg|cut:"\\n" }}</div>
+        <br>
+    {% endfor %}
+    <ul>
+    {% endautoescape %}
+{% else %}
+    <p>No Subforums are available
+{% endif %}

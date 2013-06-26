@@ -14,3 +14,6 @@ run:
 
 clean:
 	rm -f *.pyc
+
+server:
+	python2 frontend/manage.py runserver

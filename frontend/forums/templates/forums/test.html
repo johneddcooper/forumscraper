@@ -1,0 +1,11 @@
+{% if post_list %}
+    {% autoescape off %}
+    <p> These are the posts in
+    {% for post in post_list %}
+        {% msg = post.msg.replace("\\n", "") %}
+        {{msg}}
+    {% endfor %}
+    {% endautoescape %}
+{% else %}
+    <p>No Subforums are available
+{% endif %}

@@ -142,4 +142,7 @@ def download_image(file_name, file_mode, url):
     except URLError, e:
         print "URL Error:",e.reason , url
         logger.error("URL Error: %s %s",e.reason , url)
+    except:
+	print "Unkown Error"
+	logger.error("Unkown Error")
 
