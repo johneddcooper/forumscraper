@@ -1,3 +1,5 @@
+{% extends "forums/base.html" %}
+{% block content %}
 {% if subforum_list %}
     <p> This is the list of subforums
     <ul>
@@ -8,3 +10,4 @@
 {% else %}
     <p>No Posts are available
 {% endif %}
+{% endblock content %}

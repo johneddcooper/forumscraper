@@ -1,3 +1,4 @@
+from scraper import imaget
 # Django settings for frontend project.
 
 DEBUG = True
@@ -69,6 +70,7 @@ STATIC_URL = '/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
+    [imaget.create_image_dir("images")]
     # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.

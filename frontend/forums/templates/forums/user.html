@@ -1,30 +1,30 @@
+{% extends "forums/post_list.html" %}
+{% load staticfiles %}
 {% if user %}
-    {% autoescape off %}
-    <p>Stats for {{user.username}}:
-    <br>Forum: 
-    {% if forum %}
-      <a href={{forum.forum_url}}>{{forum.forum_name}}</a>
-    {% else %}
-      forum ID not found
-    {% endif %}
-    <br>Title: {{user.title}}
-    <br>Join Date: {{user.joindate}}
-    <br>Signature:
-    <br>{{user.sig|cut:"\\n"}}
-    <br>
-    <br>
-    <br>All posts made by this user
-    <br>
-    <br>
-    {% if post_list %}
-        {% for post in post_list %}
-            <br>message date: {{post.postdate}}
-            <br>{{ post.msg|cut:"\\n"}}
-        {% endfor %}
-    {% else %}
-        <p> No posts of this user found
-    {% endif %}
-    {% endautoescape %}
+    
+    {% block topbar %}
+        <a href="/forums/users/{{last_u_id}}/">last user</a>
+        <a href="/forums/users/{{next_u_id}}/">next user</a>
+    {% endblock topbar %}
+    {% block header %}
+        <p>Stats for {{user.username}}:
+        <br>Forum: 
+        {% if forum %}
+            <a href={{forum.forum_url}}>{{forum.forum_name}}</a>
+        {% else %}
+            forum ID not found
+        {% endif %}
+        <br>Title: {{user.title}}
+        <br>Join Date: {{user.joindate}}
+        <br>Signature:
+        <br>{{user.sig|cut:'\\"'|cut:'\\n'}}
+        <br>
+        <img src = "/static/users/{{user.user_id}}.jpg" />
+        <br>
+        <br>All posts made by this user
+        <br>
+        <br>
+        {% endblock %}
 {% else %}
     <p>User not found
 {% endif %}

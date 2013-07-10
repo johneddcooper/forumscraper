@@ -1,3 +1,5 @@
+{% extends "forums/base.html" %}
+{% block content %}
 {% if forum_list %}
     <p> This is the list of forums. Select one
     <ul>
@@ -8,3 +10,4 @@
 {% else %}
     <p>No forums are available
 {% endif %}
+{% endblock content %}

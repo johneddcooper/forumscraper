@@ -1,0 +1,38 @@
+{% extends "forums/base.html" %}
+{% load forum_extras %}
+{% block content %}
+{% block header %}
+{% endblock header %}
+
+
+{% block posts %}
+{% if post_list %}
+    {% autoescape off %}
+    <ul>
+    {% for post in post_list %}
+        <li>
+        <div>Posted: {{post.0.postdate}}
+        <br>By: <a href="/forums/users/{{post.0.user_id}}">{{post.0.user_id|lookup_user}}</a>
+        {% if user_page %}
+            <br><a href = "/forums/{{forum.forum_id}}/{{post.0.thread_id|get_subforum_id}}/{{post.0.thread_id}}">Thread Link</a>
+        {% endif %}
+        <br>{{ post.0.msg|cut:'\\n'|cut:'\\"' }}
+            {% if post.1 %}
+
+                <div>Post images:
+                <br>
+                {% for src in post.1 %}
+                    <img src= "/static/{{src}}"/>
+                {% endfor %}
+                </div>
+             {% endif %}
+        </div>
+        <br>
+    {% endfor %}
+    <ul>
+    {% endautoescape %}
+{% else %}
+    <p>No posts are available
+{% endif %}
+{% endblock posts %}
+{% endblock content %}

@@ -1,3 +1,5 @@
+{% extends "forums/base.html" %}
+{% block content %}
 {% if thread_list %}
     <p> This is the list of threads for {{sub.subforum_name}}
     <ul>
@@ -8,3 +10,4 @@
 {% else %}
     <p>No Subforums are available
 {% endif %}
+{% endblock content %}

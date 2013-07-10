@@ -7,13 +7,13 @@ db:
 	rm -rf images
 
 watchdog:
-	python2.7 watchdog.py http://www.gofuckbiz.com/
+	python2.7 frontend/scraper/watchdog.py http://www.gofuckbiz.com/
 
 run:
-	python2.7 vbscraper.py http://www.gofuckbiz.com/
+	python2.7 frontend/scraper/vbscraper.py http://www.gofuckbiz.com/
 
 clean:
-	rm -f *.pyc
+	rm -rf *.pyc
 
 server:
 	python2 frontend/manage.py runserver

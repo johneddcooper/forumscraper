@@ -27,7 +27,8 @@ Todo:
 #####
 
 -Restarts
-	-Restarts work, but the implementation does not allow for multiple instances to run on the same DB
+1)	-Restarts work, but the implementation does not allow for multiple instances to run on the same DB
+		- Use Pickle
 	-We need a way to know which threads have had posts added to them. Current implementations ignore a thread after
 	 scraping it once.
 
@@ -35,7 +36,7 @@ Todo:
 
 -Fix bugs with watchdog
 	-Exit Gracefully (Close browser window on SIG_KILL)
-	-Sometimes hangs (Especially on runtime errors of the subprocess)
+2)	-Sometimes hangs (Especially on runtime errors of the subprocess)
 		-blocking on read from stderr. May be fixed by making signal handlers or finding a way to cancel a read or 
 		 break the pipe. Or maybe by using unix sockets (LAST RESORT
 		-Timeouts cause the scraper to restart, this does not always resolve the timeout issue. The same webpage
@@ -46,14 +47,14 @@ Todo:
 
 -Format database
 	-DB normalized, but ForiegnKeys are not implemented
-	-Add table for images
+	-Add table for images						#DONE
 
 =============================================================================================================================
 
 -Make code nicer
-	-Add more comments
-	-Create docstrings to compile documentation #DONE
-	-Compile into a python package?
+	-Add more comments						#DONE
+	-Create docstrings to compile documentation 			#DONE
+	-Compile into a python package		    			#DONE
 	-Modularize the VBulletin code
 
 =============================================================================================================================
@@ -65,16 +66,16 @@ Todo:
 =============================================================================================================================
 
 -Download images
-	-create directory structure for images #DONE
-	-link image location to the DB (forum, thread, user, post) #DONE
-	-don't download user images more than once #DONE
+	-create directory structure for images 				#DONE
+	-link image location to the DB (forum, thread, user, post) 	#DONE
+	-don't download user images more than once 			#DONE
+	-Restructire image directory
 
-=============================================================================================================================
 
 -Other forum packages (phpbb, invision power board, simple machines)
-
+	-Restructure scraper so that the scraper gets a list of regexes to indentify key parts
 =============================================================================================================================
 
 -Create web front-end
 	-Django looks like the obvious choice.
-	-start by recreating the forum structure
+	-start by recreating the forum structure 		       #DONE
