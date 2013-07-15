@@ -1,0 +1,17 @@
+{% extends "forums/post_list.html" %}
+
+{% block header %}
+
+    <p>Search results
+
+{% endblock header %}
+<p> wtf???
+
+{% if not post_list %}
+        
+        <p>The form should be here
+        <p> wtf
+
+
+{% endif %}
+   

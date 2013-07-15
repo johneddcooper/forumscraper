@@ -1,6 +1,11 @@
 {% extends "forums/post_list.html" %}
 {% load forum_extras %}
 
+{% block topbar %}
+    <a href="/forums/{{forum_id}}/{{subforum_id}}/{{last_thread_id}}/">Last Thread</a>
+    <a href="/forums/{{forum_id}}/{{subforum_id}}/{{next_thread_id}}/">Next Thread</a>
+{% endblock topbar %}
+
 {% block header %}
 <p> These are the posts in: {{thread.thread_name}}
 <br>

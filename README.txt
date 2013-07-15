@@ -28,7 +28,8 @@ Todo:
 
 -Restarts
 1)	-Restarts work, but the implementation does not allow for multiple instances to run on the same DB
-		- Use Pickle
+		- Use Pickle                                          #DONE
+
 	-We need a way to know which threads have had posts added to them. Current implementations ignore a thread after
 	 scraping it once.
 

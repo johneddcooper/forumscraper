@@ -26,8 +26,16 @@ def create_image_dir(dirname = "images"):
     global image_dir
     home = os.path.dirname(unicode(__file__, sys.getfilesystemencoding()))
     parent = os.path.abspath(os.path.join(home, ".."))
+    dirs = ['users', 'threads']
+
     image_dir = os.path.join(parent, dirname)
     if not os.path.exists(image_dir): os.mkdir(image_dir)
+
+    for D in dirs:
+        path = os.path.join(image_dir, D)
+        if not os.path.exists(path): os.mkdir(path)
+
+
     return image_dir
 
 def get_forum_name(home):
@@ -47,7 +55,7 @@ def get_thread_dir(post):
 
     INPUT: Post object, string (path to image directory)
     RETURNS: string (path to thread directory)"""
-    forum_name = shellquotes(get_forum_name(post.home))
+    """forum_name = shellquotes(get_forum_name(post.home))
 
     f_dir = os.path.join(image_dir, forum_name)
     if not os.path.exists(f_dir): os.mkdir(f_dir)
@@ -56,6 +64,15 @@ def get_thread_dir(post):
     if not os.path.exists(s_dir): os.mkdir(s_dir)
 
     t_dir = os.path.join(s_dir, shellquotes(post.thread))
+    if not os.path.exists(t_dir): os.mkdir(t_dir)
+
+
+    threads = os.path.join(f_dir, "threads")
+    if not os.path.exists(threads): os.mkdir(threads)
+
+    print post.thread_id
+    """
+    t_dir = os.path.join(image_dir, "threads", str(post.thread_id))
     if not os.path.exists(t_dir): os.mkdir(t_dir)
 
     return t_dir

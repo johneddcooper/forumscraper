@@ -1,20 +1,60 @@
 # Create your views here.
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from forums.models import *
 from django.shortcuts import render
 import scraper.imaget as imaget
 import os
+from django import forms
+
+class search_form(forms.Form):
+    text = forms.CharField()
+    
+
+def search(request):
+    if request.method == 'POST':
+        form = search_form(request.POST)
+        if form.is_valid():
+             #process form data here
+             print "in form data"
+             search_text = form.cleaned_data['text']
+             post_list = Posts.objects.filter(msg__icontains=search_text)
+             tmp = []
+             for post in post_list:
+                 image_list = Images.objects.filter(post_id=post.post_id)
+                 image_src_list = []
+                 for image in image_list:
+                     image_src_list.append(get_image_path(image))
+                 tmp.append((post, image_src_list))
+
+             post_list = tmp
+             print len(post_list)
+             context = { 'form': form, 'post_list': post_list }
+             return render(request, 'forums/results.html', context)
+  
+        else:
+             form = search_form()
+             context = { 'form': form }
+    else:
+             form = search_form()
+             context = { 'form': form }
+    return render(request, 'forums/search.html', context)
+
 
 def get_image_path(image):
-   image_dir = imaget.image_dir
-   post = Posts.objects.get(post_id=image.post_id)
-   if not post: return None
-   thread = Threads.objects.get(thread_id=post.thread_id)
-   if not thread: return None
-   subforum = Subforums.objects.get(subforum_id=thread.subforum_id)
-   if not subforum: return None
-   forum = Forums.objects.get(forum_id=subforum.forum_id)
-   if not forum: return None
+   try:
+
+     image_dir = imaget.image_dir
+     post = Posts.objects.get(post_id=image.post_id)
+     if not post: return None
+     print post.thread_id
+     thread = Threads.objects.get(thread_id=post.thread_id)
+     if not thread: return None
+     subforum = Subforums.objects.get(subforum_id=thread.subforum_id)
+     if not subforum: return None
+     forum = Forums.objects.get(forum_id=subforum.forum_id)
+     if not forum: return None
+
+   except: return None
 
    image_path = os.path.join(imaget.shellquotes(imaget.get_forum_name(forum.forum_url)),
        imaget.shellquotes(subforum.subforum_name),
@@ -31,6 +71,8 @@ def index(request):
 def thread(request, thread_id, forum_id=0, subforum_id=0):
   post_list = Posts.objects.filter(thread_id=thread_id)
   thread = Threads.objects.get(thread_id=thread_id)
+  last_thread_id = long(thread.thread_id) - 1
+  next_thread_id = long(thread.thread_id) + 1
   tmp_list = []
   image_dir = "images"
   for post in post_list: 
@@ -40,18 +82,43 @@ def thread(request, thread_id, forum_id=0, subforum_id=0):
         image_src_list.append(get_image_path(image))
     tmp_list.append((post, image_src_list))
   post_list = tmp_list
-  context = {'post_list': post_list, 'forum_id': forum_id, 'subforum_id': subforum_id, 'thread': thread}
+  context = {'post_list': post_list, 'forum_id': forum_id, 'subforum_id': subforum_id, 'thread': thread, 'last_thread_id': last_thread_id, 'next_thread_id': next_thread_id}
   return render(request, 'forums/thread.html', context)
 
 def subforum(request, subforum_id, forum_id=0):
   thread_list = Threads.objects.filter(subforum_id=subforum_id)
+
+  forum = Forums.objects.filter(forum_id=forum_id)
+  if forum: forum_name = forum[0].forum_name
+
+  tmp = []
+  for thread in thread_list:
+      tmp.append((thread,len(Posts.objects.filter(thread_id=thread.thread_id))))
+  thread_list = tmp
+  thread_list.sort(key=lambda tup: tup[1])
+  thread_list.reverse()
   context = {'thread_list': thread_list, 'forum_id': forum_id}
   return render(request, 'forums/subforum.html', context)
 
 def forum(request, forum_id):
   subforum_list = Subforums.objects.filter(forum_id=forum_id)
+
+  forum = Forums.objects.filter(forum_id=forum_id)
+  if forum: forum_name = forum[0].forum_name
+
   print subforum_list
-  context = {'subforum_list': subforum_list}
+  tmp = []
+  for sub in subforum_list:
+      count = 0
+      thread_list = Threads.objects.filter(subforum_id=sub.subforum_id)
+      for thread in thread_list:
+          if Posts.objects.filter(thread_id=thread.thread_id): count += 1
+      tmp.append((sub, count))
+
+  subforum_list = tmp
+  subforum_list.sort(key=lambda tup: tup[1])
+  subforum_list.reverse()
+  context = {'subforum_list': subforum_list, 'forum_name': forum_name, 'forum_id': forum_id}
   return render(request, 'forums/forum.html', context)
 
 def user(request, user_id):

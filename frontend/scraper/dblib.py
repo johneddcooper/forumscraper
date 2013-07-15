@@ -38,6 +38,7 @@ class post:
     self.sig = sig
     self.edit = edit
     self.images = images
+    self.thread_id = 0
     logger.debug(" new post created\n\thome = %s\n\tdate = %s\n\tusername = %s\n images = %s", home, date, name, str(images))
 
 def setup_db():
@@ -255,6 +256,8 @@ def insert_data(con, cur, post):
 			return (0, 0)
 		thread_id = get_id(cur, "THREADS", "thread_name", post.thread)
   		#print "New THREAD: %s" % post.thread
+  post.thread_id = thread_id
+
 
   user_id = get_id( cur, "USERS", "username", post.name)
   if not user_id:

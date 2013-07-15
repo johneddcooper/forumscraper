@@ -1,10 +1,16 @@
 {% extends "forums/base.html" %}
+
+{% block topbar %}
+    {{block.super}}
+    -> <a href = "/forums/{{forum_id}}/">{{forum_name}}</a>
+{% endblock topbar %}
+
 {% block content %}
 {% if thread_list %}
     <p> This is the list of threads for {{sub.subforum_name}}
     <ul>
     {% for thread in thread_list %}
-        <li><a href="/forums/{{forum_id}}/{{thread.subforum_id}}/{{thread.thread_id}}/">{{thread.thread_name}}</a></li>
+        <li><a href="/forums/{{forum_id}}/{{thread.0.subforum_id}}/{{thread.0.thread_id}}/">{{thread.0.thread_name}}</a>  Replies {{thread.1}}</li>
     {% endfor %}
     </ul>
 {% else %}
