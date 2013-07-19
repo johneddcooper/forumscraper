@@ -5,6 +5,7 @@ import re, urlparse, os, sys
 from urllib2 import Request, urlopen, URLError, HTTPError
 from dblib import *
 import logging
+import imghdr
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -137,8 +138,9 @@ def get_post_images(post, msg_image_src, cur):
             continue
         print "DOWNLOADING POST IMAGE"
         logger.info("downloading post image")
-        pic_path = os.path.join(thread_dir, str(image_id) + ".jpg")
-        if os.path.exists(pic_path): continue
+        pic_path = os.path.join(thread_dir, str(image_id) + ".*")
+        if glob.glob(pic_path): continue
+        pic_path = os.path.join(thread_dir, str(image_id) + ".")
         
         if image.find("http") == -1: image = post.home + image
         download_image(pic_path, 'b', image)
@@ -180,10 +182,11 @@ def download_image(file_name, file_mode, url):
         print "downloading " + url
         logger.info("downloading %s", url)
         
+        image = f.read()
         # Open our local file for writing
-        local_file = open(file_name, "w" + file_mode)
+        local_file = open(file_name + imghdr.what('', image), "w" + file_mode)
         #Write to our local file
-        local_file.write(f.read())
+        local_file.write(image)
         local_file.close()
 
         print "DONE DOWNLOADING"

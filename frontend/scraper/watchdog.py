@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 """This module acts as a wrapper around vbscraper. It watches for timeouts and restarts scraping on hang"""
 import threading
 import signal

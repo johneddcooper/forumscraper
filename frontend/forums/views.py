@@ -4,6 +4,7 @@ from forums.models import *
 from django.shortcuts import render
 import scraper.imaget as imaget
 import os
+import glob
 from django import forms
 
 class search_form(forms.Form):
@@ -49,17 +50,24 @@ def get_image_path(image):
      print post.thread_id
      thread = Threads.objects.get(thread_id=post.thread_id)
      if not thread: return None
-     subforum = Subforums.objects.get(subforum_id=thread.subforum_id)
-     if not subforum: return None
-     forum = Forums.objects.get(forum_id=subforum.forum_id)
-     if not forum: return None
 
    except: return None
 
-   image_path = os.path.join(imaget.shellquotes(imaget.get_forum_name(forum.forum_url)),
-       imaget.shellquotes(subforum.subforum_name),
-       imaget.shellquotes(thread.thread_name))
-   image_path = os.path.join(image_path, str(image.image_id) + ".jpg")
+   image_path = os.path.join(image_dir,
+       "threads",
+       str(thread.thread_id))
+   image_path = os.path.join(image_path, str(image.image_id) + ".*")
+   image_path = glob.glob(image_path)
+   
+
+   if image_path: image_path = image_path[0]
+   else: return None
+
+   image_path = os.path.join("threads",
+       str(thread.thread_id),
+       image_path.split("/")[-1])
+
+   print image_path
 
    return image_path
 
