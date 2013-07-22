@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 """This module contains the scraper and parses the data"""
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException

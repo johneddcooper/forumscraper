@@ -31,7 +31,7 @@ Todo:
 		- Use Pickle                                          #DONE
 
 	-We need a way to know which threads have had posts added to them. Current implementations ignore a thread after
-	 scraping it once.
+	 scraping it once.                                            #DONE
 
 =============================================================================================================================
 
@@ -47,7 +47,7 @@ Todo:
 =============================================================================================================================
 
 -Format database
-	-DB normalized, but ForiegnKeys are not implemented
+	-DB normalized, but ForiegnKeys are not implemented             #EHHH
 	-Add table for images						#DONE
 
 =============================================================================================================================
@@ -74,9 +74,12 @@ Todo:
 
 
 -Other forum packages (phpbb, invision power board, simple machines)
-	-Restructure scraper so that the scraper gets a list of regexes to indentify key parts
+	-Restructure scraper so that the scraper gets a list of regexes to indentify key parts  #DONE
 =============================================================================================================================
 
 -Create web front-end
-	-Django looks like the obvious choice.
+	-Django looks like the obvious choice.                         #DONE
 	-start by recreating the forum structure 		       #DONE
+        -implement search                                              #DONE
+            -create search filters (user, forum, time)
+        -implement database direct download link

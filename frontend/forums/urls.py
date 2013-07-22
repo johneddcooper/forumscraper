@@ -14,4 +14,5 @@ urlpatterns = patterns('',
     url(r'^(?P<forum_id>\d+)/(?P<subforum_id>\d+)/(?P<thread_id>\d+)/$', views.thread, name='detail'),
     url(r'^(?P<forum_id>\d+)/(?P<subforum_id>\d+)/$', views.subforum, name='detail'),
     url(r'^(?P<forum_id>\d+)/$', views.forum, name='detail'),
+    url(r'^users/(?P<user_id>\d+)/$', views.user, name='detail'),
 )
