@@ -15,7 +15,8 @@ from local_settings import *
 import dblib, imaget
 import pickle
 import restart
-import vbulletin
+import vbulletin, mybb
+import signal
 
 logging.basicConfig(filename='scraper.log',level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -26,6 +27,10 @@ mysql_username = user
 mysql_password = passwd
 striptags = re.compile(r'<.+?>')
 
+kill_me = None
+
+type_flag = 0
+
 session_data = []
 
 def usage():
@@ -33,7 +38,8 @@ def usage():
 
 def parse_args():
   global home
-  if len(sys.argv) < 2:
+  global type_flag
+  if len(sys.argv) <3:
     usage()
     sys.exit(0)
 
@@ -41,7 +47,17 @@ def parse_args():
   if home[-1] != '/':
     home += "/"
   logger.info("Home url: %s", home)
+
+  type_flag = int(sys.argv[2])
   return home
+
+def dead():
+    kill_me.close()
+    sys.stderr.write("EXITING")
+
+def term_handler(signum, frame):
+    dead()
+    
 
 def get_pickle_dir():
     home = os.path.dirname(unicode(__file__, sys.getfilesystemencoding()))
@@ -89,21 +105,39 @@ def scrape_thread(browser, home, con, cur):
         sys.stderr.write("TIMEOUT")
         keypress("key Escape ")
 
+    if type_flag:
+        scraper = mybb
+    else:
+        scraper = vbulletin
+
     main_src = browser.page_source
     main_soup = bs(main_src)
-    subforums = vbulletin.get_subforums(main_soup)
+    subforums = scraper.get_subforums(main_soup)
+
+    subs = 0
 
 
+    restart.get_cookies(forum_id, browser)
+
+    sys.stderr.write("REFRESH")
 
     ##SUBFORUMS##
-    for sub in subforums:
+    for sub in subforums[::-1]:
+        
+        print "subforums %f%% DONE" % (float(subs)/len(subforums))
+        print "subforum %d of %d DONE" % (subs, len(subforums))
+        subs += 1
+        restart.dump_cookies(forum_id, browser)
         subforum_id = dblib.get_sub_id(con, cur, sub['name'], forum_id)
         
+        t_done = 0
         sub_page = 0
         sub_page_count = 1
         while sub_page < sub_page_count: #iterate through subforum pages
+            sys.stderr.write("REFRESH")
             sub_page += 1
-            sub_link = vbulletin.get_page(home + sub['link'], sub_page)
+            sub_link = scraper.get_page(home + sub['link'], sub_page)
+            print "sub link %s DONE" % sub_link
             try:
                 browser.get(sub_link)
             except TimeoutException:
@@ -113,11 +147,15 @@ def scrape_thread(browser, home, con, cur):
     
             sub_src = browser.page_source
             sub_soup = bs(sub_src)
-            threads, (sub_page, sub_page_count) = vbulletin.get_threads(sub_soup)
-
+            threads, (sub_page, sub_page_count) = scraper.get_threads(sub_soup)
+            print "got threads"
 
             ##THREADS##
             for thread in threads: #iterate through threads on page
+                print "threads %f%% DONE" % (float(t_done)/(len(threads) * sub_page_count))
+                print "thread %d of %d DONE" % (t_done, len(threads) * sub_page_count)
+                t_done += 1
+                sys.stderr.write("REFRESH")
                 thread_id = dblib.get_thread_id(con, cur, thread['name'], subforum_id)
     
                 tc = dblib.get_thread_count(thread['name'], cur)
@@ -128,9 +166,12 @@ def scrape_thread(browser, home, con, cur):
                 
                 thread_page = restart.threads[thread_id] -1
                 thread_page_count = thread_page + 1
+                print "thread %d: page %d of %d" % (thread_id, thread_page, thread_page_count)
+                print "%d\% done"
                 while thread_page < thread_page_count: #iterate through thread pages
+                    sys.stderr.write("REFRESH")
                     thread_page += 1
-                    thread_link = vbulletin.get_page(home + thread['link'], thread_page)
+                    thread_link = scraper.get_page(home + thread['link'], thread_page)
                     try:
                         browser.get(thread_link)
                     except TimeoutException:
@@ -139,7 +180,7 @@ def scrape_thread(browser, home, con, cur):
                         keypress("key Escape ")
 
                     page_src = browser.page_source
-                    posts, (thread_page, thread_page_count) = vbulletin.get_posts(page_src)
+                    posts, (thread_page, thread_page_count) = scraper.get_posts(page_src)
                     print "got posts"
                     for post in posts:
                         print "iterate post"
@@ -246,6 +287,8 @@ def scrape_thread(browser, home, con, cur):
 
 def main():
 
+        global kill_me
+        print "starting"
         home = parse_args()
         backtime = -1
 
@@ -258,7 +301,14 @@ def main():
         ##setup mysql db
         con, cur = dblib.setup_db()
 
-        scrape_thread(browser, home, con, cur)
+        kill_me = browser
+        try:
+            scrape_thread(browser, home, con, cur)
+        except:
+            dead()
+            raise
+
+        print "done"
         """
         try:
             browser.get(home)

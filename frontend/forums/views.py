@@ -4,10 +4,15 @@ from forums.models import *
 from django.shortcuts import render
 import scraper.imaget as imaget
 import os
+import datetime
 from django import forms
 
 class search_form(forms.Form):
     text = forms.CharField()
+    forum = forms.CharField()
+    user = forms.CharField()
+    start_date = forms.DateField()
+    end_date = forms.DateField()
     
 
 def search(request):
@@ -17,7 +22,13 @@ def search(request):
              #process form data here
              print "in form data"
              search_text = form.cleaned_data['text']
+             forum = form.cleaned_data['forum']
+             user = form.cleaned_data['user']
              post_list = Posts.objects.filter(msg__icontains=search_text)
+
+             if forum:
+                 forum = Forums.objects.filter(name=forum)
+                 if forum: post_list = post_list.filter()
              tmp = []
              for post in post_list:
                  image_list = Images.objects.filter(post_id=post.post_id)

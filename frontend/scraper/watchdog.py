@@ -44,13 +44,13 @@ def kill_proc(signum, frame):
 	"""Kills a process, then restarts it. SIGALRM signal handler"""
 	global flag
 	global sc1
+        print "in signal handler"
 	if not flag:
 	   try:
 		print "KILLING PROC"
 		sc1.kill()
 		sc1.scraper.wait()
 		print "Process killed"
-		sleep(3)
 		print "RESTARTING PROC"
 		sc1.restart()
 		print "PROC RESTARTED"
@@ -69,15 +69,18 @@ def main():
 	global flag
 	global sc1
 	home = parse_args()
-	args = ["python2.7", "vbscraper.py", home]
+	args = ["python2.7", "vbscraper.py", home, "0"]
 	#t = threading.Timer(5.0, kill_proc)
 	#t.start()
 	sc1 = Scraper(args)
+        print "created scraper"
+        print sc1
 	signal.signal(signal.SIGALRM, kill_proc)
 
 	#(stdoutdata, stderrdata) = sc1.scraper.communicate()
+	print "setting alarm"
+	signal.alarm(120)
 	while True:
-		signal.alarm(30)
 		line = sc1.scraper.stderr.read(7)
 		if line == "TIMEOUT":
 			signal.alarm(5)
@@ -86,7 +89,10 @@ def main():
 		elif line == "REFRESH":
 			print "TURNING FLAG ON"
 			flag = 1
-		signal.alarm(45)
+                elif line == "EXITING":
+                        print "DIED, restarting"
+                        sc1.restart()
+		signal.alarm(30)
 		"""
 		else:
 			signal.alarm(5)

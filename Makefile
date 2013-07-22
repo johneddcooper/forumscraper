@@ -7,10 +7,13 @@ db:
 	rm -rf images
 
 watchdog:
-	python2.7 frontend/scraper/watchdog.py http://www.gofuckbiz.com/
+	python2.7 frontend/scraper/watchdog.py http://www.gofuckbiz.com/ 0
 
 run:
-	python2.7 frontend/scraper/vbscraper.py http://www.gofuckbiz.com/
+	python2.7 frontend/scraper/vbscraper.py http://www.gofuckbiz.com/ 0
+
+mybb:
+	python2.7 frontend/scraper/vbscraper.py http://www.hackforums.net/
 
 clean:
 	rm -rf *.pyc
