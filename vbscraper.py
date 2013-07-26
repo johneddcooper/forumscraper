@@ -39,12 +39,12 @@ def parse_args():
   logger.info("Home url: %s", home)
   return home
 
-def keypress(sequence):
-  """This function emulates a keypress.
+def send_esc(br):
+  """This function sends an escape to the browser.
 
   It is called whenever the browser times out to prod it into continuing."""
-  p=Popen(['xte'], stdin=PIPE)
-  p.communicate(input=sequence)
+  p=Popen(['xdotool', 'search', '--all', '--pid', str(br.binary.process.pid), "--name", "Mozilla Firefox", "key", "Escape"])
+  p.communicate()
 
 def extract(string, start_marker, end_marker):
   """wrapper function for slicing into a string"""
@@ -75,7 +75,7 @@ def scrape_thread(image_dir, browser, s_page, url, thread, thread_page, subname,
     except TimeoutException:
       logger.info("Timeout: %s", home + url)
       sys.stderr.write("TIMEOUT")
-      keypress("key Escape ")
+      send_esc(browser) 
     tsrc = browser.page_source
     tsoup = bs(tsrc)
     if len(tsoup.title)==0:
@@ -155,7 +155,7 @@ def main():
         except TimeoutException:
             print "Timeout: " + home
             sys.stderr.write("TIMEOUT")
-            keypress("Key Escape ")
+            send_esc(browser) 
 
         ##get subforums from main directory
         main_src = browser.page_source
@@ -205,8 +205,8 @@ def main():
                     browser.get(home + sublink + '&daysprune=%s&page=%s' %(str(backtime), str(s_page)))
                 except TimeoutException:
                     print "Timeout: " + home + sublink + '&daysprune=' + str(backtime)
-                    keypress("key Escape ")
-                src = browser.page_source
+					send_esc(browser)
+				src = browser.page_source
                 soup = bs(src)
                 if len(soup.title)==0:
                     break
