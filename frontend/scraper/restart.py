@@ -27,6 +27,7 @@ def save_state(forum_id):
     pickle.dump(threads, pickle_file)
 
 def restore_state(forum_id):
+    global threads
     pickle_file = get_pickle_file(forum_id, "r")
     if not pickle_file: return
     threads = pickle.load(pickle_file)

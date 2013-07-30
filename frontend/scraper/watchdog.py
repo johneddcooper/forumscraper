@@ -6,9 +6,12 @@ import subprocess as sub
 from subprocess import PIPE
 from vbscraper import parse_args
 from time import sleep
+import sys
+import os
 
 flag = 1
 sc1 = None
+home_dir = os.path.dirname(unicode(__file__, sys.getfilesystemencoding()))
 
 class Scraper:
 	"""This class contains subprocesses that are the individual scrapers"""
@@ -20,6 +23,7 @@ class Scraper:
 
 	def kill(self):
 		retcode = self.scraper.poll()
+                print "retcode: " + str(retcode)
 
 		if (retcode < 0 or retcode > 0):
 			print "Scraper Failed"
@@ -70,7 +74,8 @@ def main():
 	global flag
 	global sc1
 	home = parse_args()
-	args = ["python2.7", "vbscraper.py", home, "0"]
+	args = ["python2.7", os.path.join(home_dir, "vbscraper.py"), home, "0"]
+        print args
 	#t = threading.Timer(5.0, kill_proc)
 	#t.start()
 	sc1 = Scraper(args)

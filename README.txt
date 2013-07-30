@@ -36,8 +36,8 @@ Todo:
 =============================================================================================================================
 
 -Fix bugs with watchdog
-	-Exit Gracefully (Close browser window on SIG_KILL)
-2)	-Sometimes hangs (Especially on runtime errors of the subprocess)
+	-Exit Gracefully (Close browser window on SIG_KILL)           #DONE
+2)	-Sometimes hangs                                              #DONE
 		-blocking on read from stderr. May be fixed by making signal handlers or finding a way to cancel a read or 
 		 break the pipe. Or maybe by using unix sockets (LAST RESORT
 		-Timeouts cause the scraper to restart, this does not always resolve the timeout issue. The same webpage
@@ -47,16 +47,16 @@ Todo:
 =============================================================================================================================
 
 -Format database
-	-DB normalized, but ForiegnKeys are not implemented             #EHHH
-	-Add table for images						#DONE
+	-DB normalized, but ForiegnKeys are not implemented           #EHHH
+	-Add table for images				              #DONE
 
 =============================================================================================================================
 
 -Make code nicer
-	-Add more comments						#DONE
-	-Create docstrings to compile documentation 			#DONE
-	-Compile into a python package		    			#DONE
-	-Modularize the VBulletin code
+	-Add more comments					      #DONE
+	-Create docstrings to compile documentation 		      #DONE
+	-Compile into a python package		    		      #DONE
+	-Modularize the VBulletin code                                #DONE
 
 =============================================================================================================================
 
@@ -67,19 +67,20 @@ Todo:
 =============================================================================================================================
 
 -Download images
-	-create directory structure for images 				#DONE
-	-link image location to the DB (forum, thread, user, post) 	#DONE
-	-don't download user images more than once 			#DONE
-	-Restructire image directory
+	-create directory structure for images 			      #DONE
+	-link image location to the DB (forum, thread, user, post)    #DONE
+	-don't download user images more than once 		      #DONE
+	-Restructire image directory                                  #DONE
 
 
 -Other forum packages (phpbb, invision power board, simple machines)
-	-Restructure scraper so that the scraper gets a list of regexes to indentify key parts  #DONE
+	-Restructure scraper so that the scraper gets a list of
+                                      modules to indentify key parts  #DONE
 =============================================================================================================================
 
 -Create web front-end
-	-Django looks like the obvious choice.                         #DONE
-	-start by recreating the forum structure 		       #DONE
-        -implement search                                              #DONE
+	-Django looks like the obvious choice.                        #DONE
+	-start by recreating the forum structure 		      #DONE
+        -implement search                                             #DONE
             -create search filters (user, forum, time)
         -implement database direct download link
