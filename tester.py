@@ -5,40 +5,47 @@ import sys
 import re
 import argparse
 
-def mean(li):
-    """
-    mean(list)
-    returns mean of a list of integers (float)
+# Delete this eventually
+def similarity(L1, L2):
+    """ similarity(L1, L2)
+    Takes two lists of BeautifulSoup tags
+    Returns the number of UNIQUE name-attr pairs that are not shared by both, normalized by total number of unique pairs
 
     """
+    d1 = tag_distribution(L1)
+    d2 = tag_distribution(L2)
+    mismatches = 0
+    for k1 in d1.keys():
+        if k1 not in d2.keys():
+            mismatches += 1 
+
+    for k2 in d2.keys():
+        if k2 not in d1.keys():
+            mismatches += 1
+
+    return float(mismatches)/(len(d1.keys())+len(d2.keys()))
+
+def mean(li):
+    """returns mean of a list"""
 
     return float(sum(li))/len(li)
 
 def std(li):
-    """
-    std(list)
-
-    returns standard deviation of list of integers (float)
-
-    """
+    """returns standard deviation of a list"""
     m = mean(li)
     return sqrt(mean([abs(x-m) for x in li]))
 
 def strip_links(L):
-    """strip_links(L)
-    Takes all BeautifulSoup tags at a certain depth level.
-    Returns the list, without the links.
-
-    """
+    """Returns list of BeautifulSoup tags without the links."""
     return filter(lambda x: x.name!='a', L)
 
 def get_tags_by_depth(soup):
     """get_tags_by_depth(soup)
     Takes a BeautifulSoup object. Returns a list [d0, d1, ..., dn],
-    where di is a list of all tags at that given depth level.
-    Eg d0=[head, body]
-    d1=[meta, table, script]
-    Note: the lists will not print out the names, because they contain all the children below them as well.
+    where d_i is a list of the BeautifulSoup.Tag objects at that given depth level.
+    For example:
+    d0=[<head>..</head>, <body>..</body>]
+    d1=[<meta>.., <table>.., <script>..]
 
     """
     rawtags = soup.findAll()
@@ -69,10 +76,10 @@ def get_tags_by_depth(soup):
 
 def tag_distribution(L):
     """tag_distribution(L):
-    Takes all BeautifulSoup tags at a certain depth level.
-    Returns a dictionary of counts for each tag-attr.
-    Strips all links.
-    Replaces all series of numbers with a single x.
+    L is a list of BeautifulSoup.Tag objects
+    -Uses tag name and attributes to generate a dictionary of counts.
+    -Strips all links.
+    -Replaces all series of numbers with a single x.
 
     E.g. [BeautifulSoup("<div class=post32124></div>")] returns {'div-postx': 1}
 
@@ -89,8 +96,8 @@ def tag_distribution(L):
 
 def same_tags(L1, L2):
     """same_tags(L1, L2)
-    Takes two lists of BeautifulSoup tags
-    Returns True if all tags in one list are in the other.
+    L1 and L2 are lists of BeautifulSoup.Tag objects
+    Returns True iff all tags in one list are in the other.
     
     """ 
     
@@ -98,33 +105,13 @@ def same_tags(L1, L2):
     s2 = set(tag_distribution(L2).keys())
 
 
-    return all(k1 in s2 for k1 in s1) and
+    return all(k1 in s2 for k1 in s1) and \
             all(k2 in s1 for k2 in s2)
-
-
-def similarity(L1, L2):
-    """ similarity(L1, L2)
-    Takes two lists of BeautifulSoup tags
-    Returns the number of UNIQUE name-attr pairs that are not shared by both, normalized by total number of unique pairs
-
-    """
-    d1 = tag_distribution(L1)
-    d2 = tag_distribution(L2)
-    mismatches = 0
-    for k1 in d1.keys():
-        if k1 not in d2.keys():
-            mismatches += 1 
-
-    for k2 in d2.keys():
-        if k2 not in d1.keys():
-            mismatches += 1
-
-    return float(mismatches)/(len(d1.keys())+len(d2.keys()))
 
 
 def name_attr(tag, strip_nums=1, strip_orphans=1, strip_links=1):
     """name_attr(tag, strip_nums=1, strip_orphans=1, strip_links=1)
-    Takes a BeautifulSoup tag.
+    Takes a BeautifulSoup.Tag object.
     Returns a string formatted "name-first_attribute-second_attribute".
     E.g. [<div class="post" style="font-weight:normal"></div>] returns "div-post-font-weight:normal"
     
@@ -150,12 +137,7 @@ def name_attr(tag, strip_nums=1, strip_orphans=1, strip_links=1):
     return ""
 
 def pn(L):
-    """pn(L):
-    (print name)
-    Takes all BeautifulSoup tags at a certain depth level.
-    Calls name_attr() on all of them.
-
-    """
+    """Print name: Calls name_attr() on all elements in list of BeautifulSoup.Tag objects."""
     return filter(None, map(name_attr, L))
 
 def of(name, num, suffix=""):
@@ -164,10 +146,18 @@ def of(name, num, suffix=""):
         soups.append(bs(open("%s%s%s"%(name,str(i),suffix)).read()))
     return soups
 
-def get_outliars(dic):
-    """get_outliars(dictionary)
+def get_tags_by_string(na, L):
+    """get_tags_by_string(string, list of BeautifulSoup.Tag objects)
+    Takes a name-attr string (as returned by name_attr()) and returns tags that match
+
+    """
+    
+    return filter(lambda x: name_attr(x)==na, L)
+
+def get_outliars_from_dict(dic):
+    """get_outliars_from_dict(dictionary)
     Takes a dictionary where the values are integer counts.
-    Returns the keys where the values are two standard deviations above the mean.
+    Returns a list of the keys where the values are two standard deviations above the mean.
 
     """
     m = mean(dic.values())
@@ -176,22 +166,17 @@ def get_outliars(dic):
     if k:
         return zip(*k)[0]
 
-def get_tags_by_string(na, L):
-    """get_tags_by_string(string, list of BS tags)
-    Takes a name-attr string (as specified in name_attr()) and returns tags that match
-
+def outliars(page_tbd, d):
+    """outliars(page_tags_by_depth, depth)
+   
+    Returns all tags that appear disproportionately often at the given depth.
     """
-    
-    return filter(lambda x: name_attr(x)==na, L)
 
-def get_outliars_by_page(page_tbd, depth):
-    """get_outliars_by_page(list of tags_by_depth, depth, index)
-    Returns all tags that appear disproportionately often.
-    """
+    outliars = get_outliars_from_dict(tag_distribution(page_tbd[d]))
     if not outliars:
         return []
-    out_tags = (get_tags_by_string(x, tbds[d][i]) for x in outliars)
-    
+    out_tags = (get_tags_by_string(x, page_tbd[d]) for x in outliars)
+   
     out_tags_no_boring = []
     for i, x in enumerate(out_tags):
         if any(not e.text for e in x):
@@ -201,15 +186,6 @@ def get_outliars_by_page(page_tbd, depth):
         out_tags_no_boring.append(x)
 
     return out_tags_no_boring
-
-def strip_useless_tags(tbd):
-
-     
-    children = tag.findChildren()
-    for c in children:
-        if True:
-            pass
-        
 
 def pprint_file(obd):
     """pprint_file(outliars_by_depth)
@@ -223,6 +199,46 @@ def pprint_file(obd):
             print x
             print "..."
 
+def strip_textless_tags(t):
+    i = 0
+    c = 0
+    for f in t:
+        for ol in f:
+            for tag in ol:
+                for comment in tag.findAll(
+                        text=lambda text:
+                        isinstance(text, BeautifulSoup.Comment)
+                                          ):
+                    comment.extract()
+                    c+=1
+                for child in tag.findChildren():
+                    if len(child.text) == 0 and \
+                        not child.first('img') and \
+                        child.name != 'img':
+                        child.extract()
+                        i+=1
+    print "extracted %d empty tags and %d comments" % (i, c)
+    
+
+def extract_content(t):
+    new_t = []
+    for page in t:
+        new_page = []
+        for outliar in page:
+            new_outliars = []
+            visited = []
+            all_children_n = [map(name_attr, inst.findChildren()) for inst in outliar]
+            all_children = [inst.findChildren() for inst in outliar]
+            ac_pairs = zip(all_children_n, all_children)
+            for acn, ac in ac_pairs:
+                if all(acn in other for other in all_children_n):
+                    visited.append(acn)
+                    print c, map(name_attr, tag)
+                    
+                    new_outliars.append(tag)
+            new_page.append(new_outliars)
+        new_t.append(new_page)
+    return new_t
 
 #### Todo:
 #### Finish structure_stats, use it to compute simlarity metrics,
@@ -253,6 +269,7 @@ if len(sys.argv) < 4:
     print "usage: python tester.py dir # suffix"
 
 soups = of(sys.argv[1], sys.argv[2], sys.argv[3])
+P = len(soups)
 
 dbfs = map(get_tags_by_depth, soups)
 # dbfs = Depth by files [f1:[d1, d2, ...], f2:[d1, d2, ...],...]
@@ -269,9 +286,9 @@ fbds = zip(*dbfs)
 if len(fbds) < 3:
     print "Min depth not achieved."
     sys.exit()
-print "Beginning comparison at depth level", fbds/3
+print "Beginning comparison at depth level", len(fbds)/3
 
-for i in range(fbds/3, len(fbds)-1):
+for i in range(len(fbds)/3, len(fbds)-1):
     if not all(same_tags(x1, x2) for x1 in fbds[i] for x2 in fbds[i]):
         print "Not all tags at depth level %d are the same"%i
         break
@@ -282,8 +299,8 @@ for i in range(fbds/3, len(fbds)-1):
         print "No longer closely related."
         break
     """
-t1 = [get_outliars_by_depth(fbds, i-1, x) for x in xrange(len(fbds[i-1]))]
-t2 = [get_outliars_by_depth(fbds, i  , x) for x in xrange(len(fbds[i]))]
-t3 = [get_outliars_by_depth(fbds, i+1, x) for x in xrange(len(fbds[i+1]))]
+t = [outliars(dbfs[x], i) for x in xrange(P)]
 
-strip_useless_tags_from_the_heart_of_it(t2)
+strip_textless_tags(t)
+
+newt = extract_content(t)
