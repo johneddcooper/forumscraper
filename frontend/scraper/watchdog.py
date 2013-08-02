@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 """This module acts as a wrapper around vbscraper. It watches for timeouts and restarts scraping on hang"""
 import threading
 import signal
@@ -5,9 +6,12 @@ import subprocess as sub
 from subprocess import PIPE
 from vbscraper import parse_args
 from time import sleep
+import sys
+import os
 
 flag = 1
 sc1 = None
+home_dir = os.path.dirname(unicode(__file__, sys.getfilesystemencoding()))
 
 class Scraper:
 	"""This class contains subprocesses that are the individual scrapers"""
@@ -19,6 +23,7 @@ class Scraper:
 
 	def kill(self):
 		retcode = self.scraper.poll()
+                print "retcode: " + str(retcode)
 
 		if (retcode < 0 or retcode > 0):
 			print "Scraper Failed"
@@ -44,13 +49,13 @@ def kill_proc(signum, frame):
 	"""Kills a process, then restarts it. SIGALRM signal handler"""
 	global flag
 	global sc1
+        print "in signal handler"
 	if not flag:
 	   try:
 		print "KILLING PROC"
 		sc1.kill()
 		sc1.scraper.wait()
 		print "Process killed"
-		sleep(3)
 		print "RESTARTING PROC"
 		sc1.restart()
 		print "PROC RESTARTED"
@@ -69,15 +74,19 @@ def main():
 	global flag
 	global sc1
 	home = parse_args()
-	args = ["python2.7", "vbscraper.py", home]
+	args = ["python2.7", os.path.join(home_dir, "vbscraper.py"), home, "0"]
+        print args
 	#t = threading.Timer(5.0, kill_proc)
 	#t.start()
 	sc1 = Scraper(args)
+        print "created scraper"
+        print sc1
 	signal.signal(signal.SIGALRM, kill_proc)
 
 	#(stdoutdata, stderrdata) = sc1.scraper.communicate()
+	print "setting alarm"
+	signal.alarm(120)
 	while True:
-		signal.alarm(30)
 		line = sc1.scraper.stderr.read(7)
 		if line == "TIMEOUT":
 			signal.alarm(5)
@@ -86,7 +95,10 @@ def main():
 		elif line == "REFRESH":
 			print "TURNING FLAG ON"
 			flag = 1
-		signal.alarm(45)
+                elif line == "EXITING":
+                        print "DIED, restarting"
+                        sc1.restart()
+		signal.alarm(30)
 		"""
 		else:
 			signal.alarm(5)

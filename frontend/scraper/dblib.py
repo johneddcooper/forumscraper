@@ -4,6 +4,7 @@ import sys
 from local_settings import *
 import re
 import logging
+import pdb
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -130,6 +131,7 @@ def get_id( cur, table, id_name, name):
 
   regex = re.compile(r'["\']')
   name = regex.sub('', name)
+  if id_name == "thread_name":  logger.debug("thread name: %s", name)
   command = "SELECT * FROM %s WHERE %s = \"%s\";" % (table, id_name, name)
   #print command
   try:
@@ -183,6 +185,8 @@ def get_forum_id(con, cur, url):
 
 
 def get_sub_id(con, cur, sub, f_id):
+    regex = re.compile(r'["\']')
+    sub = regex.sub('', sub)
     sf_id = get_id( cur, "SUBFORUMS", "subforum_name", sub)
     if not sf_id:
 		#print "subForum id not found"
@@ -197,6 +201,8 @@ def get_sub_id(con, cur, sub, f_id):
     return sf_id
 
 def get_thread_id(con, cur, thread, sf_id):
+    regex = re.compile(r'["\']')
+    thread = regex.sub('', thread)
     thread_id = get_id( cur, "THREADS", "thread_name", thread)
     if not thread_id:
 		#print "thread id not found"
@@ -247,6 +253,7 @@ def insert_data(con, cur, post):
   thread_id = get_id( cur, "THREADS", "thread_name", post.thread)
   if not thread_id:
 		#print "thread id not found"
+                pdb.set_trace()
 		try:
 			cur.execute("INSERT INTO THREADS (thread_name, subforum_id) VALUES (%s, %s)", (post.thread, sf_id))
 			con.commit()
@@ -307,17 +314,22 @@ def insert_data(con, cur, post):
 
 def get_thread_count(thread_name, cur):
 
-    thread_id = get_id(cur, "THREADS", "thread_id", thread_name)
+    logger.info("in get_thread_count")
+    thread_id = get_id( cur, "THREADS", "thread_name", thread_name)
     if not thread_id: return 0
     try:
         cur.execute("SELECT COUNT(post_id) FROM POSTS WHERE thread_id = %s", thread_id)
         row = cur.fetchone()
         if row: 
+            logger.debug("There were %d posts in the thread", row[0])
             return row[0]
         else:
+            logger.debug("There were 0 posts in the thread")
             return 0
     except mdb.error: 
         print "SUPER ERROR"
+        logger.error("There was an error getting the thread count")
+        raise
         return 0
   #print post_id
 

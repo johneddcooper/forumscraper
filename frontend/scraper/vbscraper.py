@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 """This module contains the scraper and parses the data"""
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -15,7 +16,9 @@ from local_settings import *
 import dblib, imaget
 import pickle
 import restart
-import vbulletin
+import vbulletin, mybb
+import signal
+import pdb
 
 logging.basicConfig(filename='scraper.log',level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -26,6 +29,10 @@ mysql_username = user
 mysql_password = passwd
 striptags = re.compile(r'<.+?>')
 
+kill_me = None
+
+type_flag = 0
+
 session_data = []
 
 def usage():
@@ -33,7 +40,8 @@ def usage():
 
 def parse_args():
   global home
-  if len(sys.argv) < 2:
+  global type_flag
+  if len(sys.argv) <3:
     usage()
     sys.exit(0)
 
@@ -41,7 +49,17 @@ def parse_args():
   if home[-1] != '/':
     home += "/"
   logger.info("Home url: %s", home)
+
+  type_flag = int(sys.argv[2])
   return home
+
+def dead():
+    kill_me.close()
+    sys.stderr.write("EXITING")
+
+def term_handler(signum, frame):
+    dead()
+    
 
 def get_pickle_dir():
     home = os.path.dirname(unicode(__file__, sys.getfilesystemencoding()))
@@ -51,25 +69,35 @@ def get_pickle_dir():
     return pickle_dir
 
 def save_session_data():
+    logger.info("saving session data")
     pickle_dir = get_pickle_dir()
+    logger.debug("Pickle directory: %s", pickle_dir)
     pickle_file = open(os.path.join(pickle_dir, imaget.get_forum_name(session_data[0]) + ".p"), 'wb')
     pickle.dump(session_data, pickle_file)
     pickle_file.close()
+    logger.info("dumped session data")
     return
 
-def keypress(sequence):
+def keypress(br):
   """This function emulates a keypress.
 
   It is called whenever the browser times out to prod it into continuing."""
-  p=Popen(['xte'], stdin=PIPE)
-  p.communicate(input=sequence)
+  p=Popen(['xdotool', 'search', '--all', '--pid', str(br.binary.process.pid), "--name", "Mozilla Firefox", "key", "Escape"])
+  p.communicate()
+
+  logger.debug("sent escape keypress")
 
 def extract(string, start_marker, end_marker):
   """wrapper function for slicing into a string"""
   start_loc = string.find(start_marker)
   end_loc = string.find(end_marker)
+
+  logger.debug("extracting from string\nstart marker: %s\nend marker: %s\n string: %s", 
+               start_marker, end_marker, string)
   if start_loc == -1 or end_loc == -1:
     return ""
+  logger.debug("extracted string %s", string[start_loc+len(start_marker):end_loc])
+
   return string[start_loc+len(start_marker):end_loc]
 
 
@@ -81,65 +109,110 @@ def scrape_thread(browser, home, con, cur):
   MySQLdb Connection Object, MySQLdb Cursor object.
   RETURNS: None"""
     forum_id = dblib.get_forum_id(con, cur, home)
+    logger.info("got forum id %d", forum_id)
     restart.restore_state(forum_id)
     try:
         browser.get(home)
     except TimeoutException:
         logger.info("Timeout: %s", home)
         sys.stderr.write("TIMEOUT")
-        keypress("key Escape ")
+        keypress(browser)
+
+    if type_flag:
+        scraper = mybb
+        logger.info("using mybb backend")
+    else:
+        scraper = vbulletin
+        logger.info("using vbulletin backend")
 
     main_src = browser.page_source
     main_soup = bs(main_src)
-    subforums = vbulletin.get_subforums(main_soup)
+    subforums = scraper.get_subforums(main_soup)
+
+    logger.debug("got subforums: %s", str(subforums))
+
+    subs = 0
 
 
+    restart.get_cookies(forum_id, browser)
+
+    sys.stderr.write("REFRESH")
+    restart.dump_cookies(forum_id, browser)
 
     ##SUBFORUMS##
-    for sub in subforums:
-        subforum_id = dblib.get_sub_id(con, cur, sub['name'], forum_id)
+    for sub in subforums[::-1]:
         
+        print "subforums %f%% DONE" % (float(subs)/len(subforums))
+        print "subforum %d of %d DONE" % (subs, len(subforums))
+        logger.info("subforums %f%% DONE", float(subs)/len(subforums))
+        logger.info("subforum %d of %d DONE", subs, len(subforums))
+        subs += 1
+        subforum_id = dblib.get_sub_id(con, cur, sub['name'], forum_id)
+        logger.debug("scraping subforum %s, id #%d", sub['name'], subforum_id)
+        
+        t_done = 0
         sub_page = 0
         sub_page_count = 1
         while sub_page < sub_page_count: #iterate through subforum pages
+            sys.stderr.write("REFRESH")
             sub_page += 1
-            sub_link = vbulletin.get_page(home + sub['link'], sub_page)
+            sub_link = scraper.get_page(home + sub['link'], sub_page)
+            print "sub link %s DONE" % sub_link
+            logger.info("sub link %s DONE", sub_link)
             try:
                 browser.get(sub_link)
             except TimeoutException:
                 logger.info("Timeout: %s", home)
                 sys.stderr.write("TIMEOUT")
-                keypress("key Escape ")
+                keypress(browser)
     
             sub_src = browser.page_source
             sub_soup = bs(sub_src)
-            threads, (sub_page, sub_page_count) = vbulletin.get_threads(sub_soup)
-
+            threads, (sub_page, sub_page_count) = scraper.get_threads(sub_soup)
+            print "got threads"
+            logger.debug("got threads\nsubforum page: %d\nsubforum poge count: %d\nThreads: %s", sub_page, sub_page_count, str(threads))
 
             ##THREADS##
             for thread in threads: #iterate through threads on page
+                print "threads %f%% DONE" % (float(t_done)/(len(threads) * sub_page_count))
+                print "thread %d of %d DONE" % (t_done, len(threads) * sub_page_count)
+                logger.info("threads %f%% DONE", float(t_done)/(len(threads) * sub_page_count))
+                logger.info("thread %d of %d DONE", t_done, len(threads) * sub_page_count)
+                t_done += 1
+                sys.stderr.write("REFRESH")
                 thread_id = dblib.get_thread_id(con, cur, thread['name'], subforum_id)
+
+                logger.debug("scraping thread %s, id %d", thread['name'], thread_id)
     
                 tc = dblib.get_thread_count(thread['name'], cur)
-                if (thread['count'] == tc) and (tc != 0): continue #if we have all of the posts, skip this thread
+                logger.debug("posts in thread: %d\ndownloaded posts from thread: %d", tc, thread['count'])
+                if (thread['count'] == tc) and (tc != 0):  continue #if we have all of the posts, skip this thread
 
-                if thread_id in restart.threads.keys(): pass
-                else: restart.threads[thread_id] = 0
+                if thread_id in restart.threads.keys(): logger.debug("in thread_keys: starting thread %d  scrape at %d", thread_id, restart.threads[thread_id])
+                #    restart.threads[thread_id][1] += 1
+                #else: restart.threads[thread_id] = (0, 1)
+                else: 
+                    restart.threads[thread_id] = 1
+                    logger.debug("not in thread keys: starting thread %d scrape at page 1", thread_id)
                 
                 thread_page = restart.threads[thread_id] -1
                 thread_page_count = thread_page + 1
+                print "thread %d: page %d of %d" % (thread_id, thread_page, thread_page_count)
+                print "%d\% done"
                 while thread_page < thread_page_count: #iterate through thread pages
+                    sys.stderr.write("REFRESH")
                     thread_page += 1
-                    thread_link = vbulletin.get_page(home + thread['link'], thread_page)
+                    thread_link = scraper.get_page(home + thread['link'], thread_page)
+                    logger.info("thread %d: page %d of %d\nLink: %s", thread_id, thread_page, thread_page_count, thread_link)
                     try:
                         browser.get(thread_link)
                     except TimeoutException:
                         logger.info("Timeout: %s", home)
                         sys.stderr.write("TIMEOUT")
-                        keypress("key Escape ")
+                        keypress(browser)
 
                     page_src = browser.page_source
-                    posts, (thread_page, thread_page_count) = vbulletin.get_posts(page_src)
+                    posts, (thread_page, thread_page_count) = scraper.get_posts(page_src)
                     print "got posts"
                     for post in posts:
                         print "iterate post"
@@ -148,9 +221,14 @@ def scrape_thread(browser, home, con, cur):
                                       user['name'], user['title'], user['join'], user['link'], user['sig'], post['edit'], post['message images'])
                         (post_id, user_id) = dblib.insert_data(con, cur, P)
                         print post_id
+                        print user['image']
+                        print type(user['image'])
+                        if user['image']:
+                            if (user['image'].find('http') == -1): user['image'] = P.home + user['image']
                         imaget.get_user_image(user_id, user['image'])
                         imaget.get_post_images(P, post['message images'], cur)
 
+                    #restart.threads[thread_id][0] = thread_page
                     restart.threads[thread_id] = thread_page
                     restart.save_state(forum_id)
                   
@@ -246,9 +324,12 @@ def scrape_thread(browser, home, con, cur):
 
 def main():
 
+        global kill_me
+        print "starting"
         home = parse_args()
         backtime = -1
 
+        signal.signal(signal.SIGTERM, dead)
         image_dir = imaget.create_image_dir("images")
 
         ##initialize selenium
@@ -258,7 +339,14 @@ def main():
         ##setup mysql db
         con, cur = dblib.setup_db()
 
-        scrape_thread(browser, home, con, cur)
+        kill_me = browser
+        try:
+            scrape_thread(kill_me, home, con, cur)
+        except:
+            dead()
+            raise
+
+        print "done"
         """
         try:
             browser.get(home)

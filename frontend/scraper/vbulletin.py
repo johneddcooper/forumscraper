@@ -4,6 +4,7 @@ import re
 import logging
 from BeautifulSoup import BeautifulSoup as bs
 import imaget
+import pdb
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -41,7 +42,7 @@ def get_threads(subforum_soup):
     page_count = subforum_soup.find('td', attrs={'class':'vbmenu_control'})
     if page_count:
         page_count = page_count.getText()
-        page_match = re.search(r'(\d+?) .+? (\d+?)', page_count)
+        page_match = re.search(r'(\d+) .+? (\d+)', page_count)
         if page_match:
             page_count = int(page_match.group(2))
             page = int(page_match.group(1))
@@ -60,7 +61,7 @@ def get_threads(subforum_soup):
         t = threads[i]
         c = thread_counts[i]
         sanatized = c['title'].replace(',', '')
-        count = int(re.search(r'.+?: (\d+?) .+?: (\d+?)',sanatized).group(1))
+        count = int(re.search(r'.+?: (\d+?) .+?: (\d+?)',sanatized).group(1)) + 1
         text = t.getText()
         link = t['href']
         threadlinks.append({'name':text, 'link':link, 'count':count})
@@ -78,7 +79,7 @@ def get_posts(page_soup):
     page_count = page_soup.find('td', attrs={'class':'vbmenu_control'})
     if page_count:
         page_count = page_count.getText()
-        page_match = re.search(r'(\d+?) .+? (\d+?)', page_count)
+        page_match = re.search(r'(\d+) .+? (\d+)', page_count)
         if page_match:
             page_count = int(page_match.group(2))
             page = int(page_match.group(1))
@@ -106,6 +107,7 @@ def get_posts(page_soup):
         print "\n\n\n"
 
         user = get_user(post_string, sig)
+
         post_list.append({'date': date, 'message': message, 'edit': edit, 'message images': msg_image_srcs, 'user': user, 'link': post_link})
 
     return post_list, (page, page_count)

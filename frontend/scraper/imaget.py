@@ -5,6 +5,10 @@ import re, urlparse, os, sys
 from urllib2 import Request, urlopen, URLError, HTTPError
 from dblib import *
 import logging
+import imghdr
+import glob
+import pdb
+import socket
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -113,7 +117,7 @@ def get_user_image(user_id, src):
     user_dir = os.path.join(image_dir, "users")
     if not os.path.exists(user_dir): os.mkdir(user_dir)
 
-    pic_path = os.path.join(user_dir, str(user_id) + ".jpg")
+    pic_path = os.path.join(user_dir, str(user_id) + ".")
     if os.path.exists(pic_path): return
 
     download_image(pic_path, 'b', src)
@@ -137,8 +141,9 @@ def get_post_images(post, msg_image_src, cur):
             continue
         print "DOWNLOADING POST IMAGE"
         logger.info("downloading post image")
-        pic_path = os.path.join(thread_dir, str(image_id) + ".jpg")
-        if os.path.exists(pic_path): continue
+        pic_path = os.path.join(thread_dir, str(image_id) + ".*")
+        if glob.glob(pic_path): continue
+        pic_path = os.path.join(thread_dir, str(image_id) + ".")
         
         if image.find("http") == -1: image = post.home + image
         download_image(pic_path, 'b', image)
@@ -176,14 +181,17 @@ def download_image(file_name, file_mode, url):
     
     # Open the url
     try:
-        f = urlopen(req)
+        f = urlopen(req, None, 5)
         print "downloading " + url
         logger.info("downloading %s", url)
         
+        image = f.read()
         # Open our local file for writing
-        local_file = open(file_name, "w" + file_mode)
+        header = imghdr.what('', image)
+        if not header: return
+        local_file = open(file_name + header, "w" + file_mode)
         #Write to our local file
-        local_file.write(f.read())
+        local_file.write(image)
         local_file.close()
 
         print "DONE DOWNLOADING"
@@ -195,7 +203,11 @@ def download_image(file_name, file_mode, url):
     except URLError, e:
         print "URL Error:",e.reason , url
         logger.error("URL Error: %s %s",e.reason , url)
-    except:
-	print "Unkown Error"
-	logger.error("Unkown Error")
+    except socket.error, e:
+        print "Socket Error:" + str(sys.exc_info()) + url
+        logger.error("Socket Error: %s %s",str(sys.exc_info()), url)
+    except Exception, e:
+	print "Unknown  error: %s" % str(sys.exc_info())
+	logger.error("Unknown  error: %s", str(sys.exc_info()))
+        raise
 

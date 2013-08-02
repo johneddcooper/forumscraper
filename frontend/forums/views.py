@@ -4,10 +4,16 @@ from forums.models import *
 from django.shortcuts import render
 import scraper.imaget as imaget
 import os
+import datetime
+import glob
 from django import forms
 
 class search_form(forms.Form):
     text = forms.CharField()
+    forum = forms.CharField()
+    user = forms.CharField()
+    start_date = forms.DateField()
+    end_date = forms.DateField()
     
 
 def search(request):
@@ -17,7 +23,13 @@ def search(request):
              #process form data here
              print "in form data"
              search_text = form.cleaned_data['text']
+             forum = form.cleaned_data['forum']
+             user = form.cleaned_data['user']
              post_list = Posts.objects.filter(msg__icontains=search_text)
+
+             if forum:
+                 forum = Forums.objects.filter(name=forum)
+                 if forum: post_list = post_list.filter()
              tmp = []
              for post in post_list:
                  image_list = Images.objects.filter(post_id=post.post_id)
@@ -49,17 +61,24 @@ def get_image_path(image):
      print post.thread_id
      thread = Threads.objects.get(thread_id=post.thread_id)
      if not thread: return None
-     subforum = Subforums.objects.get(subforum_id=thread.subforum_id)
-     if not subforum: return None
-     forum = Forums.objects.get(forum_id=subforum.forum_id)
-     if not forum: return None
 
    except: return None
 
-   image_path = os.path.join(imaget.shellquotes(imaget.get_forum_name(forum.forum_url)),
-       imaget.shellquotes(subforum.subforum_name),
-       imaget.shellquotes(thread.thread_name))
-   image_path = os.path.join(image_path, str(image.image_id) + ".jpg")
+   image_path = os.path.join(image_dir,
+       "threads",
+       str(thread.thread_id))
+   image_path = os.path.join(image_path, str(image.image_id) + ".*")
+   image_path = glob.glob(image_path)
+   
+
+   if image_path: image_path = image_path[0]
+   else: return None
+
+   image_path = os.path.join("threads",
+       str(thread.thread_id),
+       image_path.split("/")[-1])
+
+   print image_path
 
    return image_path
 
