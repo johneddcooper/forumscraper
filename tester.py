@@ -4,6 +4,7 @@ from math import sqrt
 import sys
 import re
 import argparse
+import pdb
 
 # Delete this eventually
 def similarity(L1, L2):
@@ -48,32 +49,21 @@ def get_tags_by_depth(soup):
     d1=[<meta>.., <table>.., <script>..]
 
     """
-    rawtags = soup.findAll()
-    if not rawtags:
-        return []
-    daddio = rawtags[0]
-    siblings = daddio.fetchNextSiblings()
-    parents = [daddio] + [s for s in siblings]
+    tags_by_depth = [[t for t in soup(recursive=False)]]
+    d = 1
+    while True:
+        tags = []
+        for t in tags_by_depth[d-1]:
+            tags.extend(t.findChildren(recursive=False))
     
-    all_tags= []
-    for i in range(len(parents)):
-        tags_by_depth = [parents[i].findChildren(recursive=False)]
-        d = 1
-        while True:
-            tags = []
-            for t in tags_by_depth[d-1]:
-                tags.extend(t.findChildren(recursive=False))
-        
-            tags = filter(None, tags)
-            if tags:
-                tags_by_depth.append(tags)
-            else:
-                all_tags.append(tags_by_depth)  
-                break
-    
-            d+=1
-    return map(None, *all_tags)
+        tags = filter(None, tags)
+        if tags:
+            tags_by_depth.append(tags)
+        else:
+            break
 
+        d+=1
+    return tags_by_depth
 def tag_distribution(L):
     """tag_distribution(L):
     L is a list of BeautifulSoup.Tag objects
@@ -205,7 +195,7 @@ def strip_textless_tags(t):
     for f in t:
         for ol in f:
             for tag in ol:
-                for comment in tag.findAll(
+                for comment in tag.findChildren()(
                         text=lambda text:
                         isinstance(text, BeautifulSoup.Comment)
                                           ):
@@ -303,4 +293,47 @@ t = [outliars(dbfs[x], i) for x in xrange(P)]
 
 strip_textless_tags(t)
 
-newt = extract_content(t)
+newt = []
+
+# this takes each post, which consists of several large and nested
+# div/tables, and extracts the subcontents that are identical
+# across posts
+
+for item in t[0]:
+    
+    children = [tag() for tag in item]
+    children = filter(None, children)
+
+    allnames = [filter(None, map(name_attr, ch)) for ch in children]
+    allnames = filter(None, allnames) 
+
+    # if an attribute is in all of the children, then extract it
+    # and display it as an independent element
+    
+    if allnames:
+
+        # which tags do all the posts have in common?
+        # we want common tags because they are likely to indicate
+        # structural similarities, like postdates/usernames
+        # rather than tags from within posts
+        
+        common = reduce(lambda x, y: x.intersection(y), map(set, allnames))
+        # extract the actual tags based off their names/attributes
+    
+        newti = [[get_tags_by_string(com, c) for com in common] for c in children]
+       
+        # extract these tags from their parents
+        [[[x.extract() for x in a] for a in b] for b in newti]
+
+        # some of these tags are redundant. if they are exactly
+        # the same across the posts, then strip them.
+        
+        newtz = zip(*newti)
+        for i in range(len(newtz)):
+            if all(x==newtz[i][0] for x in newtz[i]):
+                map(lambda n: n.pop(i), newti)
+        if newti:
+            newt.append(newti)
+
+znewt = zip(*newt)
+strip_textless_tags(t)
