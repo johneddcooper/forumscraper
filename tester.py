@@ -1,7 +1,6 @@
 import BeautifulSoup
 from BeautifulSoup import BeautifulSoup as bs
 from math import sqrt
-from itertools import chain
 import sys
 import re
 import argparse
@@ -73,7 +72,6 @@ class Scraper:
 
     def train(self, soups):
         """Train over list of soups to find location/names of relevant tags"""
-       
         dbfs = map(get_tags_by_depth, soups)
         # dbfs = Depth by files [f1:[d1, d2, ...], f2:[d1, d2, ...],...]
         # f_i and f_j can be different lengths, depending on their max depth
@@ -95,20 +93,19 @@ class Scraper:
             if not all(same_tags(x1, x2) for x1 in fbds[i] for x2 in fbds[i]):
                 print "Not all tags at depth level %d are the same"%i
                 break
-
-        t = [outliars(dbfs[x], i) for x in xrange(P)]
-        map(strip_textless_tags, t)
-        packed = map(extract_contents, t)
-        contents, allnames, page = zip(*packed)
-        pdb.set_trace()        
-
-    def extract(self, soup):
-        """Extracts content of a soup, given training data"""
         
-        if not self.train_data:
+        self.depth = i
+        
+    def parse(self, soup):
+        """Extracts content of a soup, given training data"""
+        if not self.depth:
             print "Error: Need to train data first."
             return
-
+        tbd = get_tags_by_depth(soup)
+        t = outliars(tbd, self.depth)
+        contents = extract_contents(t)
+        return contents
+    
 ##################################
 # Miscellanious numeric functions#
 ##################################
@@ -172,7 +169,7 @@ def same_tags(L1, L2):
             all(k2 in s1 for k2 in s2)
 
 
-def name_attr(tag, strip_nums=1, strip_orphans=1, strip_links=1):
+def name_attr(tag, strip_nums=1, strip_orphans=0, strip_links=1):
     """name_attr(tag, strip_nums=1, strip_orphans=1, strip_links=1)
     Takes a BeautifulSoup.Tag object.
     Returns a string formatted "name-first_attribute-second_attribute".
@@ -261,27 +258,59 @@ def outliars(tbd, d):
 
     return out_tags_no_boring
 
-def strip_textless_tags(page):
-    """strip_textless_tags(page)
-    Takes a nested list of page->outliar->tag
-    Strips all the tags without any text that aren't images or don't contain images
-    
+def is_boring(tag):
+    """Returns true if tag
+    1) has no text
+    2) is not an image
+    3) does not contain an image
     """
+    if len(tag.text) == 0 and not tag.first('img', src=True)\
+                            and tag.name != 'img':
+        return True
+    return False
+
+def extract_textless_tag(tag):
+    """extract_textless_tag(tag)
+    Takes a tag
+    Calls extract() on its children if they 
+    1) have no text
+    2) are not an image
+    3) do not contain an image
     
-    i = 0
-    c = 0
-    for ol in page:
-        for tag in ol:
-            for comment in tag.findChildren(text=lambda txt:
-                                isinstance(txt, BeautifulSoup.Comment)
-            ):
-                comment.extract()
-                c+=1
-            for child in tag.findChildren():
-                if len(child.text) == 0 and not child.first('img')\
-                                        and child.name != 'img':
-                    child.extract()
-                    i+=1
+    Then returns True if itself fits the same criteria
+
+    """
+    for comment in tag.findChildren(text=lambda txt:
+                        isinstance(txt, BeautifulSoup.Comment)
+    ):
+        comment.extract()
+    
+    for child in tag.findChildren():
+        if is_boring(child):
+            child.extract()
+    
+    if is_boring(tag):
+        return True
+    return False
+
+def recur_extract(tag):
+    if is_boring(tag):
+        return
+    cs = tag(recursive=False)
+    if len(cs) == 0:
+        if tag.name == 'img':
+            data = [tag.get('src')]
+        else:
+            data = [tag.getText()]
+        tag.extract()
+    else:
+        data = []
+        for c in cs:
+            data.extend(recur_extract(c))
+        filter(None, data)
+        if tag.getText():
+            data.extend([tag.getText()])
+    return data
 
 def extract_contents(page):
     """extract_contents(page)
@@ -289,21 +318,30 @@ def extract_contents(page):
     div/tables, and extracts the subcontents that are identical across posts
     
     """
-
     newt = []
-    allnames = [] 
     for item in page:
-            
         children = [tag() for tag in item]
+        
+        cbd = map(get_tags_by_depth, item)
+        dbc = zip(*cbd)
+
+        dbc_names = [[[name_attr(x) for x in msg] for msg in dep] for dep in dbc] 
+        
+        #[map(lambda c: c.extract(), child) for child in children]
+        for i, child in enumerate(children):
+            for j, c in enumerate(child):
+                if extract_textless_tag(c):
+                    print "Extracted boring tag:", c
+                    children[i][j] = None
+        children = [filter(None, child) for child in children]
         children = filter(None, children)
         
 
-        names = [filter(None, map(name_attr, ch)) for ch in children]
-        names = filter(None, names) 
-
+        names = [map(name_attr, child) for child in children]
+        names = [filter(None, child) for child in names]
+        names = filter(None, names)
         # if an attribute is in all of the children, then extract it
         # and display it as an independent element
-        
         if names:
 
             # which tags do all the posts have in common?
@@ -312,28 +350,20 @@ def extract_contents(page):
             # rather than tags from within posts
             
             common = reduce(lambda x, y: x.intersection(y), map(set, names))
-            
-            allnames.append(common) 
             # extract the actual tags based off their names/attributes
         
             newti = [[get_tags_by_string(com, c) for com in common] for c in children]
             
-            # extract these tags from their parents
-           
-            [[[x.extract() for x in a] for a in b] for b in newti]
-
             # some of these tags are redundant. if they are exactly
             # the same across the posts, then strip them.
-             
             newtz = zip(*newti)
             for i in range(len(newtz)):
                 if all(x==newtz[i][0] for x in newtz[i]):
                     map(lambda n: n.pop(i), newti)
-            if newti: 
+            if any(len(n)!=0 for n in newti): 
                 newt.append(newti)
-    newtz = zip(*newti)
-    allnames = reduce(lambda x, y: x.intersection(y), map(set, allnames)) 
-    return newtz, allnames, page
+    
+    return zip(*newt)
 
 def pn(L):
     """Print name: Calls name_attr() on all elements in list of BeautifulSoup.Tag objects."""
@@ -354,3 +384,4 @@ soups = of(sys.argv[1], sys.argv[2], sys.argv[3])
 P = len(soups)
 
 S = Scraper(soups)
+contents = S.parse(soups[0])
