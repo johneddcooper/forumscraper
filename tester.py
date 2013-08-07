@@ -6,7 +6,10 @@ import re
 import argparse
 import pdb
 import itertools
-
+import string
+import operator
+import pprint
+import pickle
 """
 Note on data structures.
 What do the functions accept as arguments?
@@ -67,9 +70,15 @@ class Scraper:
     #       Public methods      #
     #############################
     
-    def __init__(self, soups=None):
-        if soups:
+    def __init__(self, soups=None, save=None):
+        if save:
+            self.load(save)
+        elif soups:
             self.train(soups)
+    
+    def load(self, save):
+        self.labels, self.clusters, self.use_text, \
+            self.depth, self.outliar_names = pickle.load(open(save))
 
     def train(self, soups):
         """Train over list of soups to find location/names of relevant tags"""
@@ -88,11 +97,11 @@ class Scraper:
         if len(fbds) < 3:
             print "Min depth not achieved."
             sys.exit()
-        print "Beginning comparison at depth level", len(fbds)/3
+        #print "Beginning comparison at depth level", len(fbds)/3
 
         for i in xrange(len(fbds)/3, len(fbds)-1):
             if not all(self.same_tags(x1, x2) for x1 in fbds[i] for x2 in fbds[i]):
-                print "Not all tags at depth level %d are the same"%i
+                #print "Not all tags at depth level %d are the same"%i
                 break
         self.depth = i
         if self.depth==len(fbds)-1:
@@ -104,23 +113,91 @@ class Scraper:
         outliars = self.get_outliars_from_dict(
                     self.tag_distribution(fbds[self.depth])
                                             )
-        self.tbd = fbds[self.depth]
         self.outliar_names = outliars 
+        
+        contents = self.parse(soups[0])
+        self.labels, self.clusters, self.use_text = self.get_labels(contents)
+        pickle.dump(
+            [self.labels, self.clusters, self.use_text, \
+             self.depth,  self.outliar_names         ], \
+             open("gfb.p", "w"))
 
+    def scrape(self, soup):
+        contents = self.parse(soup)
+        cd = self.label_contents(contents)
+        return cd
+    
+    ##################################
+    #       Internal functions       #
+    ##################################
+   
+    def get_labels(self, contents):
+        """Query user to label data.
+        """
+        labels = {}
+        clusters = {}
+        use_text = {}
+        for i,c in enumerate(contents):
+            pprint.pprint(c)
+            label = raw_input("Label ((D) discard): ").lower().strip()
+            if label != 'd':
+                print "Store text instead of raw tags?"
+                for elem in c:
+                    print elem.text
+                text = raw_input("Store text instead of raw tags? (y/[n]) ").lower().strip()
+                if text == 'y':
+                    use_text[label] = True
+                else:
+                    use_text[label] = False
+            else:
+                label = "d%d"%i
+            na = self.name_attr(c[0])
+            if na in labels.keys():
+                labels[na].append(label)
+            else:
+                labels[na] = [label]
+            stats = self.calc_stats(c)
+            clusters[stats] = label
+            print "----------"
+        return labels, clusters, use_text
+    
     def parse(self, soup):
         """Extracts content of a soup, given training data"""
         if not self.depth:
             print "Error: Need to train data first."
             return
-        
         tbd = self.get_tags_by_depth(soup)
         tags = [self.get_tags_by_string(out, tbd[self.depth]) for out in self.outliar_names]
         contents = self.extract_contents(tags)
-        return contents
+        return contents 
     
-    ##################################
-    #       Internal functions       #
-    ##################################
+    def label_contents(self, contents):
+        content_dict = {}
+        for c in contents:
+            na = self.name_attr(c[0])
+            if na not in self.labels.keys():
+                print "%s has not appeared in training data." % na
+            else:
+                # candidate labels
+                clabels = self.labels[na]
+                if len(clabels)==1:
+                    content_dict[clabels[0]] = c
+                else:
+                    cands = {k: v for (k, v) in self.clusters.items() if v in clabels}
+                    print cands
+                    stat = self.calc_stats(c)
+                    calc_diff = lambda x, y: mean([abs(x[i]-y[i]) for i in xrange(len(x))])
+                    min_diff = 100000
+                    min_label = ""
+                    for k in cands.keys():
+                        d = calc_diff(stat, k)
+                        if d < min_diff:
+                            min_diff = d
+                            min_label = cands[k]
+                    content_dict[cands[k]] = c
+
+        return content_dict
+   
 
     def get_tags_by_depth(self, soup):
         """get_tags_by_depth(soup)
@@ -315,6 +392,7 @@ class Scraper:
         """
 
         newt = []
+        posts = []
         for item in page:
             children = [tag() for tag in item] 
             
@@ -333,57 +411,33 @@ class Scraper:
                             if all(name in other_entries for other_entries in depth):
                                 tagged.append(name)
                                 tag = [self.get_tags_by_string(name, entries) for entries in dbc[i]]
-                                [map(lambda x: x.extract(), t) for t in tag]
-                                
-                                # skip boring tags
-                                if self.extract_boring_tag(t[0]):
-                                    continue
-                                
-                                # skip tags that are all EXACTLY the same
-                                if all(tag[0] == other_tag for other_tag in tag):
-                                    continue
-
-                                tags.append(tag)
-
-            return tags 
-            #[map(lambda c: c.extract(), child) for child in children]
-            for i, child in enumerate(children):
-                for j, c in enumerate(child):
-                    if self.extract_boring_tag(c):
-                        children[i][j] = None
-            children = [filter(None, child) for child in children]
-            children = filter(None, children)
-            
-            names = [map(self.name_attr, child) for child in children]
-            names = [filter(None, child) for child in names]
-            names = filter(None, names)
-            # if an attribute is in all of the children, then extract it
-            # and display it as an independent element
-            if names:
-
-                # which tags do all the posts have in common?
-                # we want common tags because they are likely to indicate
-                # structural similarities, like postdates/usernames
-                # rather than tags from within posts
-                
-                common = reduce(lambda x, y: x.intersection(y), map(set, names))
-                # extract the actual tags based off their names/attributes
-                newti = [[self.get_tags_by_string(com, c) for com in common] for c in children]
-                
-                # some of these tags are redundant. if they are exactly
-                # the same across the posts, then strip them.
-                newtz = zip(*newti)
-                for i in range(len(newtz)):
-                    if all(x==newtz[i][0] for x in newtz[i]):
-                        map(lambda n: n.pop(i), newti)
-                if any(len(n)!=0 for n in newti): 
-                    newt.append(newti)
-        
-        return zip(*newt)
+                                ts = zip(*tag)
+                                for t in ts:
+                                    
+                                    map(self.extract_boring_tag, t)
+                                    map(lambda x: x.extract(), t)
+                                    if self.is_boring(t[0]):
+                                        continue
+                                    if all(t[0] == x for x in t):
+                                        continue
+                                    tags.append(t)
+            if tags:
+                posts.extend(tags)
+        return posts
 
     def pn(L):
         """Print name: Calls name_attr() on all elements in list of BeautifulSoup.Tag objects."""
         return filter(None, map(self.name_attr, L))
+
+    def calc_stats(self, tags):
+        """Calculates certain metrics for clustering tags.
+        """
+        count = lambda x, y: len(filter(lambda x1: x1 in y, x))
+        avglen = mean(map(len, map(str,tags)))
+        numdig = mean(map(lambda x: count(x, string.digits), map(lambda x: x.getText(), tags)))
+        numupper = mean(map(lambda x: count(x, string.ascii_uppercase), map(lambda x: x.getText(), tags)))
+        numwhite = mean(map(lambda x: count(x, string.whitespace), map(lambda x: x.getText(), tags)))
+        return numdig/avglen, numupper/avglen, numwhite/avglen
 
 ##################################
 # Miscellanious numeric functions#
@@ -409,12 +463,16 @@ def of(name, num, suffix=""):
         soups.append(bs(open("%s%s%s"%(name,str(i),suffix)).read()))
     return soups
 
-
 if len(sys.argv) < 4:
-    print "usage: python tester.py dir # suffix"
+    print "usage:"
+    sys.exit()
 
 soups = of(sys.argv[1], sys.argv[2], sys.argv[3])
-P = len(soups)
+if len(sys.argv) > 4:
+    save = sys.argv[4]
+    S = Scraper(save=save)
+else:
+    S = Scraper(soups=soups[:-1])
 
-S = Scraper(soups)
-contents = S.parse(soups[0])
+scrape= S.scrape(soups[-1])
+
