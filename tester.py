@@ -5,6 +5,7 @@ import sys
 import re
 import argparse
 import pdb
+import itertools
 
 """
 Note on data structures.
@@ -72,7 +73,7 @@ class Scraper:
 
     def train(self, soups):
         """Train over list of soups to find location/names of relevant tags"""
-        dbfs = map(get_tags_by_depth, soups)
+        dbfs = map(self.get_tags_by_depth, soups)
         # dbfs = Depth by files [f1:[d1, d2, ...], f2:[d1, d2, ...],...]
         # f_i and f_j can be different lengths, depending on their max depth
         # len(dbfs) is always the number of pages
@@ -89,23 +90,301 @@ class Scraper:
             sys.exit()
         print "Beginning comparison at depth level", len(fbds)/3
 
-        for i in range(len(fbds)/3, len(fbds)-1):
-            if not all(same_tags(x1, x2) for x1 in fbds[i] for x2 in fbds[i]):
+        for i in xrange(len(fbds)/3, len(fbds)-1):
+            if not all(self.same_tags(x1, x2) for x1 in fbds[i] for x2 in fbds[i]):
                 print "Not all tags at depth level %d are the same"%i
                 break
-        
         self.depth = i
+        if self.depth==len(fbds)-1:
+            print "Unusually homogenous webpage. You may continue, at your own risk."
+            
+        for i in xrange(len(fbds)):
+            fbds[i] = [item for sublist in fbds[i] for item in sublist]
         
+        outliars = self.get_outliars_from_dict(
+                    self.tag_distribution(fbds[self.depth])
+                                            )
+        self.tbd = fbds[self.depth]
+        self.outliar_names = outliars 
+
     def parse(self, soup):
         """Extracts content of a soup, given training data"""
         if not self.depth:
             print "Error: Need to train data first."
             return
-        tbd = get_tags_by_depth(soup)
-        t = outliars(tbd, self.depth)
-        contents = extract_contents(t)
+        
+        tbd = self.get_tags_by_depth(soup)
+        tags = [self.get_tags_by_string(out, tbd[self.depth]) for out in self.outliar_names]
+        contents = self.extract_contents(tags)
         return contents
     
+    ##################################
+    #       Internal functions       #
+    ##################################
+
+    def get_tags_by_depth(self, soup):
+        """get_tags_by_depth(soup)
+        Takes a BeautifulSoup object. Returns a list [d0, d1, ..., dn],
+        where d_i is a list of the BeautifulSoup.Tag objects at that given depth level.
+        For example:
+        d0=[<head>..</head>, <body>..</body>]
+        d1=[<meta>.., <table>.., <script>..]
+
+        """
+        c = soup(recursive=False)
+        if not c:
+            return []
+        tags_by_depth = [[t for t in c]]
+        d = 1
+        while True:
+            tags = []
+            for t in tags_by_depth[d-1]:
+                tags.extend(t.findChildren(recursive=False))
+        
+            tags = filter(None, tags)
+            if tags:
+                tags_by_depth.append(tags)
+            else:
+                break
+
+            d+=1
+        return tags_by_depth
+
+    def same_tags(self, L1, L2):
+        """same_tags(L1, L2)
+        L1 and L2 are lists of BeautifulSoup.Tag objects
+        Returns True iff all tags in one list are in the other.
+        
+        """ 
+        
+        s1 = set(self.tag_distribution(L1).keys())
+        s2 = set(self.tag_distribution(L2).keys())
+
+        return all(k1 in s2 for k1 in s1) and \
+                all(k2 in s1 for k2 in s2)
+
+
+    def name_attr(self, tag, strip_nums=1, strip_orphans=0, strip_links=1):
+        """name_attr(tag, strip_nums=1, strip_orphans=1, strip_links=1)
+        Takes a BeautifulSoup.Tag object.
+        Returns a string formatted "name-first_attribute-second_attribute".
+        E.g. [<div class="post" style="font-weight:normal"></div>] returns "div-post-font-weight:normal"
+        
+        strip_nums: strips the numbers from the attribute, replacing any series of them with a single "x"
+        E.g. [<div class=post232></div>] returns "div-postx"
+
+        strip_orphans: returns an empty string for any tag that doesn't have attributes.
+        
+        strip_links: returns an empty string for any link tags.
+        
+        """
+        if not tag:
+            return ""
+        if not strip_links or tag.name!= 'a':
+            if tag.attrs:
+                at = [tag.attrs[i][1] for i in xrange(len(tag.attrs))]
+                at = "-".join(at)
+                if strip_nums:
+                    at = re.sub(r"\d+","x", at)
+                return "%s-%s"%(tag.name, at)
+            elif not strip_orphans:
+                return tag.name
+        return ""
+
+    def get_tags_by_string(self, na, L):
+        """get_tags_by_string(string, list of BeautifulSoup.Tag objects)
+        Takes a name-attr string (as returned by name_attr()) and returns tags that match
+
+        """
+        
+        return filter(lambda x: self.name_attr(x)==na, L)
+
+    def tag_distribution(self, L, strip_links=1, strip_nums=1, strip_orphans=1):
+        """tag_distribution(L, strip_orphans=0):
+        L is a list of BeautifulSoup.Tag objects
+        -Uses tag name and attributes to generate a dictionary of counts.
+        -Strips all links.
+        -Replaces all series of numbers with a single x.
+
+        E.g. [BeautifulSoup("<div class=post32124></div>")] returns {'div-postx': 1}
+
+        """
+        ud = {}
+        for x in L:
+            n = self.name_attr(x, strip_nums=strip_nums, strip_links=strip_links,strip_orphans=strip_orphans)
+            if n:
+                if n in ud.keys():
+                    ud[n] += 1
+                else:
+                    ud[n] = 1
+        return ud
+
+
+    def get_outliars_from_dict(self, D):
+        """get_outliars_from_dict(tag_dictionary)
+        Internal function for outliars()
+        Takes a dictionary where the values are integer counts.
+        Returns a list of the keys where the values are two standard deviations above the mean.
+        """
+        m = mean(D.values())
+        s = std(D.values())
+        k = filter(lambda x: x[1] > m + 2*s, D.items())
+        if k:
+            return zip(*k)[0]
+
+    def outliars(self, tbd, d):
+        """outliars(tags_by_depth, depth)
+        Returns all tags that appear disproportionately often at the given depth.
+
+        """
+
+        outliars = self.get_outliars_from_dict(self.tag_distribution(tbd[d]))
+        if not outliars:
+            return []
+        out_tags = (self.get_tags_by_string(x, tbd[d]) for x in outliars)
+       
+        out_tags_no_boring = []
+        for i, x in enumerate(out_tags):
+            if any(not e.text for e in x):
+                continue
+            if all(e.text==x[0].text for e in x):
+                continue
+            out_tags_no_boring.append(x)
+
+        return out_tags_no_boring
+
+    def is_boring(self, tag):
+        """Returns true if tag
+        - has no text
+        - is not an image
+        - does not contain an image
+        - is not a script tag
+        """
+        if tag.name == "script":
+            return True
+        if len(tag.text) == 0 and not tag.first('img', src=True)\
+                                and tag.name != 'img':
+            return True
+        return False
+
+    def extract_boring_tag(self, tag):
+        """extract_boring_tag(tag)
+        Takes a tag
+        Calls extract() on its children if they are boring, (see method is_boring())
+        Extracts and returns True if the tag itself fits the same criteria
+
+        """
+        for comment in tag.findChildren(text=lambda txt:
+                            isinstance(txt, BeautifulSoup.Comment)
+        ):
+            comment.extract()
+        
+        for child in tag.findChildren():
+            if self.is_boring(child):
+                child.extract()
+        
+        if self.is_boring(tag):
+            tag.extract()
+            return True
+        return False
+
+    def recur_extract(self, tag):
+        if self.is_boring(tag):
+            return
+        cs = tag(recursive=False)
+        if len(cs) == 0:
+            if tag.name == 'img':
+                data = [tag.get('src')]
+            else:
+                data = [tag.getText()]
+            tag.extract()
+        else:
+            data = []
+            for c in cs:
+                data.extend(recur_extract(c))
+            filter(None, data)
+            if tag.getText():
+                data.extend([tag.getText()])
+        return data
+
+    def extract_contents(self, page):
+        """extract_contents(outnames, page, depth)
+        this takes each post, which consists of several large and nested
+        div/tables, and extracts the subcontents that are identical across posts
+        
+        """
+
+        newt = []
+        for item in page:
+            children = [tag() for tag in item] 
+            
+            cbd = map(self.get_tags_by_depth, item)
+            dbc = zip(*cbd)
+
+            dbc_names = [[[self.name_attr(x) for x in msg if not self.is_boring(x)] for msg in dep] for dep in dbc] 
+            
+            tags = []
+            tagged = []
+            for i in xrange(len(dbc_names)-1, -1, -1):
+                depth = dbc_names[i]
+                for entry in depth:
+                    for name in entry:
+                        if name and name not in tagged:
+                            if all(name in other_entries for other_entries in depth):
+                                tagged.append(name)
+                                tag = [self.get_tags_by_string(name, entries) for entries in dbc[i]]
+                                [map(lambda x: x.extract(), t) for t in tag]
+                                
+                                # skip boring tags
+                                if self.extract_boring_tag(t[0]):
+                                    continue
+                                
+                                # skip tags that are all EXACTLY the same
+                                if all(tag[0] == other_tag for other_tag in tag):
+                                    continue
+
+                                tags.append(tag)
+
+            return tags 
+            #[map(lambda c: c.extract(), child) for child in children]
+            for i, child in enumerate(children):
+                for j, c in enumerate(child):
+                    if self.extract_boring_tag(c):
+                        children[i][j] = None
+            children = [filter(None, child) for child in children]
+            children = filter(None, children)
+            
+            names = [map(self.name_attr, child) for child in children]
+            names = [filter(None, child) for child in names]
+            names = filter(None, names)
+            # if an attribute is in all of the children, then extract it
+            # and display it as an independent element
+            if names:
+
+                # which tags do all the posts have in common?
+                # we want common tags because they are likely to indicate
+                # structural similarities, like postdates/usernames
+                # rather than tags from within posts
+                
+                common = reduce(lambda x, y: x.intersection(y), map(set, names))
+                # extract the actual tags based off their names/attributes
+                newti = [[self.get_tags_by_string(com, c) for com in common] for c in children]
+                
+                # some of these tags are redundant. if they are exactly
+                # the same across the posts, then strip them.
+                newtz = zip(*newti)
+                for i in range(len(newtz)):
+                    if all(x==newtz[i][0] for x in newtz[i]):
+                        map(lambda n: n.pop(i), newti)
+                if any(len(n)!=0 for n in newti): 
+                    newt.append(newti)
+        
+        return zip(*newt)
+
+    def pn(L):
+        """Print name: Calls name_attr() on all elements in list of BeautifulSoup.Tag objects."""
+        return filter(None, map(self.name_attr, L))
+
 ##################################
 # Miscellanious numeric functions#
 ##################################
@@ -122,252 +401,6 @@ def std(li):
     return sqrt(mean([abs(x-m) for x in li]))
 
 
-##################################
-#       Internal functions       #
-##################################
-
-def get_tags_by_depth(soup):
-    """get_tags_by_depth(soup)
-    Takes a BeautifulSoup object. Returns a list [d0, d1, ..., dn],
-    where d_i is a list of the BeautifulSoup.Tag objects at that given depth level.
-    For example:
-    d0=[<head>..</head>, <body>..</body>]
-    d1=[<meta>.., <table>.., <script>..]
-
-    """
-    c = soup(recursive=False)
-    if not c:
-        return []
-    tags_by_depth = [[t for t in c]]
-    d = 1
-    while True:
-        tags = []
-        for t in tags_by_depth[d-1]:
-            tags.extend(t.findChildren(recursive=False))
-    
-        tags = filter(None, tags)
-        if tags:
-            tags_by_depth.append(tags)
-        else:
-            break
-
-        d+=1
-    return tags_by_depth
-
-def same_tags(L1, L2):
-    """same_tags(L1, L2)
-    L1 and L2 are lists of BeautifulSoup.Tag objects
-    Returns True iff all tags in one list are in the other.
-    
-    """ 
-    
-    s1 = set(tag_distribution(L1).keys())
-    s2 = set(tag_distribution(L2).keys())
-
-
-    return all(k1 in s2 for k1 in s1) and \
-            all(k2 in s1 for k2 in s2)
-
-
-def name_attr(tag, strip_nums=1, strip_orphans=0, strip_links=1):
-    """name_attr(tag, strip_nums=1, strip_orphans=1, strip_links=1)
-    Takes a BeautifulSoup.Tag object.
-    Returns a string formatted "name-first_attribute-second_attribute".
-    E.g. [<div class="post" style="font-weight:normal"></div>] returns "div-post-font-weight:normal"
-    
-    strip_nums: strips the numbers from the attribute, replacing any series of them with a single "x"
-    E.g. [<div class=post232></div>] returns "div-postx"
-
-    strip_orphans: returns an empty string for any tag that doesn't have attributes.
-    
-    strip_links: returns an empty string for any link tags.
-    
-    """
-    if not tag:
-        return ""
-    if not strip_links or tag.name!= 'a':
-        if tag.attrs:
-            at = [tag.attrs[i][1] for i in xrange(len(tag.attrs))]
-            at = "-".join(at)
-            if strip_nums:
-                at = re.sub(r"\d+","x", at)
-            return "%s-%s"%(tag.name, at)
-        elif not strip_orphans:
-            return tag.name
-    return ""
-
-def get_tags_by_string(na, L):
-    """get_tags_by_string(string, list of BeautifulSoup.Tag objects)
-    Takes a name-attr string (as returned by name_attr()) and returns tags that match
-
-    """
-    
-    return filter(lambda x: name_attr(x)==na, L)
-
-def tag_distribution(L):
-    """tag_distribution(L):
-    L is a list of BeautifulSoup.Tag objects
-    -Uses tag name and attributes to generate a dictionary of counts.
-    -Strips all links.
-    -Replaces all series of numbers with a single x.
-
-    E.g. [BeautifulSoup("<div class=post32124></div>")] returns {'div-postx': 1}
-
-    """
-    ud = {}
-    for x in L:
-        n = name_attr(x)
-        if n:
-            if n in ud.keys():
-                ud[n] += 1
-            else:
-                ud[n] = 1
-    return ud
-
-
-def get_outliars_from_dict(D):
-    """get_outliars_from_dict(tag_dictionary)
-    Internal function for outliars()
-    Takes a dictionary where the values are integer counts.
-    Returns a list of the keys where the values are two standard deviations above the mean.
-    """
-    m = mean(D.values())
-    s = std(D.values())
-    k = filter(lambda x: x[1] > m + 2*s, D.items())
-    if k:
-        return zip(*k)[0]
-
-def outliars(tbd, d):
-    """outliars(tags_by_depth, depth)
-    Returns all tags that appear disproportionately often at the given depth.
-
-    """
-
-    outliars = get_outliars_from_dict(tag_distribution(tbd[d]))
-    if not outliars:
-        return []
-    out_tags = (get_tags_by_string(x, tbd[d]) for x in outliars)
-   
-    out_tags_no_boring = []
-    for i, x in enumerate(out_tags):
-        if any(not e.text for e in x):
-            continue
-        if all(e.text==x[0].text for e in x):
-            continue
-        out_tags_no_boring.append(x)
-
-    return out_tags_no_boring
-
-def is_boring(tag):
-    """Returns true if tag
-    1) has no text
-    2) is not an image
-    3) does not contain an image
-    """
-    if len(tag.text) == 0 and not tag.first('img', src=True)\
-                            and tag.name != 'img':
-        return True
-    return False
-
-def extract_textless_tag(tag):
-    """extract_textless_tag(tag)
-    Takes a tag
-    Calls extract() on its children if they 
-    1) have no text
-    2) are not an image
-    3) do not contain an image
-    
-    Then returns True if itself fits the same criteria
-
-    """
-    for comment in tag.findChildren(text=lambda txt:
-                        isinstance(txt, BeautifulSoup.Comment)
-    ):
-        comment.extract()
-    
-    for child in tag.findChildren():
-        if is_boring(child):
-            child.extract()
-    
-    if is_boring(tag):
-        return True
-    return False
-
-def recur_extract(tag):
-    if is_boring(tag):
-        return
-    cs = tag(recursive=False)
-    if len(cs) == 0:
-        if tag.name == 'img':
-            data = [tag.get('src')]
-        else:
-            data = [tag.getText()]
-        tag.extract()
-    else:
-        data = []
-        for c in cs:
-            data.extend(recur_extract(c))
-        filter(None, data)
-        if tag.getText():
-            data.extend([tag.getText()])
-    return data
-
-def extract_contents(page):
-    """extract_contents(page)
-    this takes each post, which consists of several large and nested
-    div/tables, and extracts the subcontents that are identical across posts
-    
-    """
-    newt = []
-    for item in page:
-        children = [tag() for tag in item]
-        
-        cbd = map(get_tags_by_depth, item)
-        dbc = zip(*cbd)
-
-        dbc_names = [[[name_attr(x) for x in msg] for msg in dep] for dep in dbc] 
-        
-        #[map(lambda c: c.extract(), child) for child in children]
-        for i, child in enumerate(children):
-            for j, c in enumerate(child):
-                if extract_textless_tag(c):
-                    print "Extracted boring tag:", c
-                    children[i][j] = None
-        children = [filter(None, child) for child in children]
-        children = filter(None, children)
-        
-
-        names = [map(name_attr, child) for child in children]
-        names = [filter(None, child) for child in names]
-        names = filter(None, names)
-        # if an attribute is in all of the children, then extract it
-        # and display it as an independent element
-        if names:
-
-            # which tags do all the posts have in common?
-            # we want common tags because they are likely to indicate
-            # structural similarities, like postdates/usernames
-            # rather than tags from within posts
-            
-            common = reduce(lambda x, y: x.intersection(y), map(set, names))
-            # extract the actual tags based off their names/attributes
-        
-            newti = [[get_tags_by_string(com, c) for com in common] for c in children]
-            
-            # some of these tags are redundant. if they are exactly
-            # the same across the posts, then strip them.
-            newtz = zip(*newti)
-            for i in range(len(newtz)):
-                if all(x==newtz[i][0] for x in newtz[i]):
-                    map(lambda n: n.pop(i), newti)
-            if any(len(n)!=0 for n in newti): 
-                newt.append(newti)
-    
-    return zip(*newt)
-
-def pn(L):
-    """Print name: Calls name_attr() on all elements in list of BeautifulSoup.Tag objects."""
-    return filter(None, map(name_attr, L))
 
 def of(name, num, suffix=""):
     """open file: for internal testing purposes"""
