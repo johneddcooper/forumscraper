@@ -7,6 +7,9 @@
 {% endblock topbar %}
 
 {% block header %}
-<p> These are the posts in: {{thread.thread_name}}
+<p> These are the posts in: {{thread.thread_name}}</p>
 <br>
+<br>
+<br><a href = "/forums/{{forum_id}}/{{subforum_id}}/{{thread_id}}/?page={{last_page}}&num_posts={{num_posts}}">&#60--</a>
+<a href = "/forums/{{forum_id}}/{{subforum_id}}/{{thread_id}}/?page={{next_page}}&num_posts={{num_posts}}">--&#62</a>
 {% endblock %}

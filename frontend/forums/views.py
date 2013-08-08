@@ -89,6 +89,20 @@ def index(request):
 
 def thread(request, thread_id, forum_id=0, subforum_id=0):
   post_list = Posts.objects.filter(thread_id=thread_id)
+
+  page = 0
+  num_posts = 30
+  if request.method == 'GET':
+      print "Get request"
+      print request.GET
+      if 'page' in request.GET.keys(): page = int(request.GET['page'])
+      if 'num_posts' in request.GET.keys(): num_posts = int(request.GET['num_posts'])
+
+  if page: last_page = page - 1
+  else: last_page = page
+
+  post_list = post_list[page*num_posts: min((page+1)*num_posts, len(post_list))]
+
   thread = Threads.objects.get(thread_id=thread_id)
   last_thread_id = long(thread.thread_id) - 1
   next_thread_id = long(thread.thread_id) + 1
@@ -101,7 +115,7 @@ def thread(request, thread_id, forum_id=0, subforum_id=0):
         image_src_list.append(get_image_path(image))
     tmp_list.append((post, image_src_list))
   post_list = tmp_list
-  context = {'post_list': post_list, 'forum_id': forum_id, 'subforum_id': subforum_id, 'thread': thread, 'last_thread_id': last_thread_id, 'next_thread_id': next_thread_id}
+  context = {'post_list': post_list, 'forum_id': forum_id, 'subforum_id': subforum_id, 'thread': thread, 'thread_id': thread_id, 'last_thread_id': last_thread_id, 'next_thread_id': next_thread_id, 'num_posts': num_posts, 'next_page': page+1, 'last_page': last_page}
   return render(request, 'forums/thread.html', context)
 
 def subforum(request, subforum_id, forum_id=0):

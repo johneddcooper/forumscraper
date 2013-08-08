@@ -209,5 +209,4 @@ def download_image(file_name, file_mode, url):
     except Exception, e:
 	print "Unknown  error: %s" % str(sys.exc_info())
 	logger.error("Unknown  error: %s", str(sys.exc_info()))
-        raise
 
