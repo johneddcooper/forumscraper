@@ -114,7 +114,6 @@ class Scraper:
                     self.tag_distribution(fbds[self.depth])
                                             )
         self.outliar_names = outliars 
-        
         contents = self.parse(soups[0])
         self.labels, self.clusters, self.use_text = self.get_labels(contents)
         pickle.dump(
@@ -242,7 +241,7 @@ class Scraper:
                 all(k2 in s1 for k2 in s2)
 
 
-    def name_attr(self, tag, strip_nums=1, strip_orphans=0, strip_links=1):
+    def name_attr(self, tag, strip_nums=1, strip_orphans=0, strip_links=0):
         """name_attr(tag, strip_nums=1, strip_orphans=0, strip_links=1)
         Takes a BeautifulSoup.Tag object.
         Returns a string formatted "name-first_attribute-second_attribute".
@@ -277,12 +276,10 @@ class Scraper:
         
         return filter(lambda x: self.name_attr(x)==na, L)
 
-    def tag_distribution(self, L, strip_links=1, strip_nums=1, strip_orphans=1):
-        """tag_distribution(L, strip_orphans=0):
+    def tag_distribution(self, L, strip_links=0, strip_nums=1, strip_orphans=1):
+        """tag_distribution(L, strip_links=1, strip_nums=1, strip_orphans=1):
         L is a list of BeautifulSoup.Tag objects
-        -Uses tag name and attributes to generate a dictionary of counts.
-        -Strips all links.
-        -Replaces all series of numbers with a single x.
+        Uses tag name and attributes to generate a dictionary of counts.
 
         E.g. [BeautifulSoup("<div class=post32124></div>")] returns {'div-postx': 1}
 
