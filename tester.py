@@ -187,6 +187,7 @@ class Scraper:
                     print cands
                     stat = self.calc_stats(c)
                     calc_diff = lambda x, y: mean([abs(x[i]-y[i]) for i in xrange(len(x))])
+                    
                     min_diff = 100000
                     min_label = ""
                     for k in cands.keys():
@@ -242,7 +243,7 @@ class Scraper:
 
 
     def name_attr(self, tag, strip_nums=1, strip_orphans=0, strip_links=1):
-        """name_attr(tag, strip_nums=1, strip_orphans=1, strip_links=1)
+        """name_attr(tag, strip_nums=1, strip_orphans=0, strip_links=1)
         Takes a BeautifulSoup.Tag object.
         Returns a string formatted "name-first_attribute-second_attribute".
         E.g. [<div class="post" style="font-weight:normal"></div>] returns "div-post-font-weight:normal"
