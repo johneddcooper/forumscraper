@@ -253,7 +253,6 @@ def insert_data(con, cur, post):
   thread_id = get_id( cur, "THREADS", "thread_name", post.thread)
   if not thread_id:
 		#print "thread id not found"
-                pdb.set_trace()
 		try:
 			cur.execute("INSERT INTO THREADS (thread_name, subforum_id) VALUES (%s, %s)", (post.thread, sf_id))
 			con.commit()

@@ -39,11 +39,11 @@ class Scraper:
 def add_scraper(foo):
 	Scrapers.append(foo)
 
-def hello():
-	print "hello world"
+def parse_args():
 
-#t = threading.Timer(5.0, hello)
-#t.start()
+    parser = argparse.ArgumentParser(description="Scrape a webforum")
+    parser.add_argument("--threads", "-t", metavar="number of threads", type=int, default=2)
+    parser.add_argument("forum", metavar="forum url", type=string)
 
 def kill_proc(signum, frame):
 	"""Kills a process, then restarts it. SIGALRM signal handler"""

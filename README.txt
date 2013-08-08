@@ -27,7 +27,7 @@ Todo:
 #####
 
 -Restarts
-1)	-Restarts work, but the implementation does not allow for multiple instances to run on the same DB
+	-Restarts work, but the implementation does not allow for multiple instances to run on the same DB
 		- Use Pickle                                          #DONE
 
 	-We need a way to know which threads have had posts added to them. Current implementations ignore a thread after
@@ -37,12 +37,35 @@ Todo:
 
 -Fix bugs with watchdog
 	-Exit Gracefully (Close browser window on SIG_KILL)           #DONE
-2)	-Sometimes hangs                                              #DONE
+	-Sometimes hangs                                              #DONE
 		-blocking on read from stderr. May be fixed by making signal handlers or finding a way to cancel a read or 
 		 break the pipe. Or maybe by using unix sockets (LAST RESORT
 		-Timeouts cause the scraper to restart, this does not always resolve the timeout issue. The same webpage
 		 is loaded again, trigerring another timeout. This may be resolved by maintaining a count of timeout on
 		 pages in the DB.
+
+=============================================================================================================================
+
+-Implement better interprocess communication
+        -Use poll or select for reading in the watchdog
+        -Have the watchdog send data about what threads to scrape by the subprocesses
+                -Maybe have the watchdog scrape the forums and subforums first.
+
+=============================================================================================================================
+
+-Set definitive roles for the watchdog and the scrapers.
+        -Watchdog
+             -Wait for scrapers to die and restart them.
+             -Tell scrapers what threads to scrape.
+             -Keep track of what threads are done/where they are
+             -Save and restore state
+        -Scrapers
+             -Scrape threads
+             -Download post and user info
+
+=============================================================================================================================
+
+-Create a robust argument system
 
 =============================================================================================================================
 
