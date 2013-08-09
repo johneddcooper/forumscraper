@@ -14,6 +14,8 @@ import urlparse
 import subprocess
 from collections import Counter
 import pdb
+import multiprocessing
+from multiprocessing import Queue
 #import dblib
 
 re_sort = re.compile(r"\d*(?=\.html)")
@@ -23,6 +25,7 @@ i = None
 timeout = 10 
 home = ""
 archive_link = ""
+q = Queue()
 
 def init_selenium(profile=None):
     br = webdriver.Firefox(profile)
@@ -53,7 +56,27 @@ def get_urls(br):
 def strip_num(link):
     stripped = re.sub(r"\d+", "x", link)
     return stripped
+
+def get_thread_pages(br, link):
+    """Given a thread link, returns individual thread's pagination."""
+    punc = re.search(r'(\W)', link[::-1])
+    # punc should always return something, or this link has no punctuation!
     
+    assert punc
+    
+    if punc.groups()[0] == '.':
+        # if link is in form "/thread-343.html" then strip the file ext
+        stub = re.sub(r"^.*?\.", "", link[::-1])[::-1]    
+    else:            
+        # don't strip links in the form ?thread=2343 because often these
+        # links have pages appended in the form of arguments
+        stub = link
+    
+    urls = get_urls(br)
+    candidates = filter(lambda url: url.startswith(stub), urls)
+    pages = uniq(candidates)
+    return pages
+
 def get_subforums(br):
     """gets all subforums from archive style homepage
     assumes subforum links are most common links on page,
@@ -83,6 +106,15 @@ def get_threads_on_page(br, stub):
     page_threads = filter(lambda x: strip_num(x)==thread_template, urls)
     return page_threads
 
+def uniq(li, generator=1):
+    """like sort(list(li)) but preserves order. returns generator by default"""
+    seen = set()
+    seen_add = seen.add
+    if generator:
+        return (x for x in li if x not in seen and not seen_add(x))
+    else:
+        return [x for x in li if x not in seen and not seen_add(x)]
+
 def get_threads(br):
     link = br.current_url
     urls = get_urls(br)
@@ -94,18 +126,64 @@ def get_threads(br):
     pages = filter(lambda url: url.startswith(stub) and not url.startswith(link), urls)
     
     # remove duplicates while preserving order
-    seen = set()
-    seen_add = seen.add
-    pages = [x for x in pages if x not in seen and not seen_add(x)]
+    pages = uniq(pages)
     
-    threads = get_threads_on_page(br, stub)
+    yield get_threads_on_page(br, stub)
     for page in pages:
         #get threads
         #threads start with archive_link, but do not start with stub_template
-        visit_page(br, page)
-        threads.extend(get_threads_on_page(br, stub))
+        yield get_threads_on_page(br, stub)
 
-    return threads
+def save_page(subforum, thread, page, source):
+    # opens appropriate file handler
+    #f = open( ... )
+    #f.write(source)
+    print "Saving page %s : %s : %s"
+    print source[:30] + " ..."
+    return
+
+def worker(q):
+    br = init_selenium()
+    while True:
+        try:
+            job = q.get()
+            if not job:
+                break
+            # front page of thread, so get links
+            subforum, link = job
+            if len(job) == 2:
+                visit_page(br, link)
+                thread = br.current_url
+                thread_pages = get_thread_pages(br, link)
+                print "Got thread pages from %s" % link
+                for tp in thread_pages:
+                    q.enqueue((subforum, thread, tp))
+            elif len(job) == 3:
+                print "Visited thread page %s" % link
+                subforum, thread, link = job
+                visit_page(br, link)
+            else:
+                # this should never happen
+                print "Malformed job length. Job:", job
+
+            source = br.page_source
+            save_page(subforum, thread, link, source)
+            
+            q.task_done()
+        except:
+            print "no jobs enqueued. waiting..."
+            sleep(10)
+
+def init_workers(num, q):
+    workers = []
+    for i in xrange(num):
+        tmp = multiprocessing.Process(target=worker, args=q)
+        tmp.start()
+        workers.append(tmp)
+    for worker in workers:
+        worker.join()
+    print "All workers done."
+    return q.empty()
 
 if len(sys.argv) < 2:
     print "Usage: python progname.py link"
@@ -120,22 +198,21 @@ br = init_selenium()
 
 visit_page(br, archive_link)
 subforums = get_subforums(br)
-all_threads = []
-sub_titles = []
+initialized = False
 for subforum in subforums:
     visit_page(br, subforum)
     sub_title = br.title
     if not br.current_url.startswith(archive_link):
         print "Skipping subforum: %s" % br.current_url
         continue
-    thread_links = get_threads(br)
-    if thread_links:
-        all_threads.append(thread_links)
-        sub_titles.append(sub_title)
-        # send thread_links to queue
-    break
+    for tl in get_threads(br):
+        q.put((sub_title, tl))
+        if not initialized:
+            init_workers(5, q)
+            initialized=True
+
+    # debug
+    pdb.set_trace()
 
 visit_page(br, thread)
-#if first punc from end is period:
-#    strip to stub
 
