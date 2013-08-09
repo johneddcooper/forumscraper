@@ -16,6 +16,9 @@ from collections import Counter
 import pdb
 import multiprocessing
 from multiprocessing import JoinableQueue
+from redis import Redis
+from hotqueue import HotQueue
+
 #import dblib
 
 re_sort = re.compile(r"\d*(?=\.html)")
@@ -75,10 +78,10 @@ def get_thread_pages(br, link):
         # links have pages appended in the form of arguments
         candidates = filter(lambda url: re.search(r"(&page=)", url), urls)
         if candidates:
-            print candidates
             page_nums = [int(re.search(r"(?<=&page=)(\d*)", url).groups()[-1]) for url in candidates]
             max_page = max(page_nums)
-            return [urlparse.urljoin(link, "&page=%d" % i) for i in range(2, max_page+1)]
+            print link
+            return [link + "&page=%d"%i for i in range(2, max_page+1)]
         else:
             candidates = filter(lambda url: re.search(r"(&page=)|(&start=)", url), urls)
             if not candidates:
@@ -86,7 +89,7 @@ def get_thread_pages(br, link):
             page_nums = [int(re.search(r"(?<=&start=))(\d*)", url).groups()[-1]) for url in candidates]
             page_nums = sorted(set(list(page_nums)))
             step = page_nums[0]
-            return [urlparse.urljoin(link, "&start=%d" % i) for i in range(step, page_nums[-1], step)]
+            return [link + "&start=%d" % i for i in range(step, page_nums[-1], step)]
 
 def get_subforums(br):
     """gets all subforums from archive style homepage
@@ -219,7 +222,7 @@ if len(sys.argv) < 2:
     print "Usage: python archives.py link"
 
 q = JoinableQueue()
-
+queue = HotQueue("links")
 home = sys.argv[1]
 hdir = "./" + re.sub("^http://", "", home)
 if not os.path.isdir(hdir):
