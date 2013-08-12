@@ -117,8 +117,10 @@ def get_posts(page_soup):
 def get_user(post_string, sig = ""):
 
     user_tag = bs(post_string).find('td', attrs={'class':'alt2'})
-    user_name = user_tag.find('a', attrs={'class':'bigusername'}).getText()
-    user_link = user_tag.find('a', attrs={'class':'bigusername'})['href']
+    user_link = user_tag.find('a', attrs={'class':'bigusername'})
+    if not user_link: return {'tag': user_tag, 'name': 'guest', 'link': None, 'join': None, 'sig': None, 'image': None, 'title': 'guest'}
+    user_name = user_link.getText()
+    user_link = user_link['href']
     user_title = user_tag.findAll('div')[1].getText()
     
     user_div = user_tag.findAll('div')

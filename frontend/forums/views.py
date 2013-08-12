@@ -142,13 +142,16 @@ def forum(request, forum_id):
   print subforum_list
   tmp = []
   for sub in subforum_list:
+      print "1 iteration"
       count = 0
+      print count
       thread_list = Threads.objects.filter(subforum_id=sub.subforum_id)
       for thread in thread_list:
           if Posts.objects.filter(thread_id=thread.thread_id): count += 1
       tmp.append((sub, count))
 
   subforum_list = tmp
+  print subforum_list
   subforum_list.sort(key=lambda tup: tup[1])
   subforum_list.reverse()
   context = {'subforum_list': subforum_list, 'forum_name': forum_name, 'forum_id': forum_id}

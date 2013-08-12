@@ -343,6 +343,7 @@ def main():
         try:
             scrape_thread(kill_me, home, con, cur)
         except:
+            pdb.post_mortem()
             dead()
             raise
 

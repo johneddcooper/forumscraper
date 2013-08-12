@@ -8,6 +8,7 @@ from vbscraper import parse_args
 from time import sleep
 import sys
 import os
+import argparse
 
 flag = 1
 sc1 = None
@@ -41,9 +42,13 @@ def add_scraper(foo):
 
 def parse_args():
 
+    backends = ["mybb", "vbulletin"]
+
     parser = argparse.ArgumentParser(description="Scrape a webforum")
     parser.add_argument("--threads", "-t", metavar="number of threads", type=int, default=2)
     parser.add_argument("forum", metavar="forum url", type=string)
+    parser.add_argument("-b", "--backend", metavar="type of forum", type=string, choices=backends, required=True)
+
 
 def kill_proc(signum, frame):
 	"""Kills a process, then restarts it. SIGALRM signal handler"""
