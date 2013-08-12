@@ -9,8 +9,10 @@ import argparse
 import itertools
 import operator
 import pprint
-
+import pickle
+import string
 import BeautifulSoup
+from collections import defaultdict
 from BeautifulSoup import BeautifulSoup as bs
 
 logger = logging.getLogger(__name__)
@@ -286,31 +288,26 @@ class GenericParser:
         self.name = name
         self.min_soups = min_soups
         if save:
-            self.ready = True
-            self.training = False 
             self.load(save)
+            self.ready=True
         elif src:
             self.sources = []
-            self.ready = False
-            self.training = False 
             self.add_source(src)
+            self.ready=False
         else:
             self.sources = []
-            self.ready = False
-            self.training = False 
+            self.ready=False
     def add_source(self, src):
         """Add source to parser. Once enough have been gathered, runs train()"""
         self.sources.append(src)
         if len(self.sources) >= self.min_soups:
-            self.train()
-            return map(self.parse, self.sources)
-        return None
+            self.ready=True
+            return True
+        return False
 
-    def is_ready(self):
-        return self.ready
-    
-    def is_training(self):
-        return self.training
+    def train_and_parse(self):
+        self.train()
+        return map(self.parse, self.sources)
 
     def load(self, save):
         self.labels, self.clusters, self.use_text, \
@@ -318,13 +315,27 @@ class GenericParser:
     
     def parse(self, src):
         if len(self.sources) < self.min_soups:
-            self.add_source(src)
-            return
+            print "Parser not yet trained."
+            raise
         soup = bs(src)
-        contents = self.extract_content(soup)
+        contents = self.extract_contents(soup)
         cd = self.label_contents(contents)
-        return cd
-    
+        # "unzips" the dictionary
+        # before: {user: "user1", "user2", "user3"}
+        # after: [{user: "user1"}, {user: "user2"}, etc]
+        if cd:
+            ld = []
+            for i in xrange(len(cd.values()[0])):
+                d = defaultdict(str)
+                for key in cd.keys():
+                    if self.use_text[key]:
+                        d[key] = cd[key][i].text
+                    else:
+                        d[key] = cd[key][i]
+                ld.append(d)
+            return ld
+        else:
+            return None
     ##################################
     #       Internal functions       #
     ##################################
@@ -367,87 +378,96 @@ class GenericParser:
                     self.tag_distribution(fbds[self.depth])
                                             )
         self.outliar_names = outliars 
-        contents = self.parse(soups[0])
+        contents = self.extract_contents(soups[0])
         self.labels, self.clusters, self.use_text = self.get_labels(contents)
         pickle.dump(
             [self.labels, self.clusters, self.use_text, \
              self.depth,  self.outliar_names         ], \
              open("%s.p"%self.name, "w"))
-   
+
     def get_labels(self, contents):
         """Query user to label data.
         """
         labels = {}
         clusters = {}
         use_text = {}
+        print "\n\n--- Starting Training Process ---\n\n"
+        prompt = """Label this data:
+        
+        d) discard
+
+        0) username
+        1) user title 
+        2) message 
+        3) post date
+        4) join date 
+        5) signature
+        6) edits
+        - other: type in label\n>"""
         for i,c in enumerate(contents):
-            pprint.pprint(c)
-            prompt = """Label this data:
-            [dD] discard
-            0) username
-            1) user title 
-            2) message 
-            3) post date
-            4) join date 
-            5) signature
-            6) edits
-            - other: type in label
-            """
-            label = raw_input("Label ((D) discard): ").lower().strip()
-            na = self.name_attr(c[0])
-            try:
-                num = int(label)
-                if num == 0:
-                    label = 'user'
-                elif num == 1:
-                    label = 'utitle'
-                elif num == 2:
-                    label = 'msg'
-                elif num == 3:
-                    label = 'date'
-                elif num == 4:
-                    label = 'joindate'
-                elif num == 6:
-                    label = 'sig'
-                elif num == 7:
-                    label = 'edits'
-                if na in labels.keys():
-                    labels[na].append(label)
-                else:
-                    labels[na] = [label]
-                for elem in c:
-                    print elem.text
-                text = raw_input("Store text instead of raw tags? (y/[n]) ").lower().strip()
-            except:
-                if label == 'd':
-                    label = "d%d"%i
-                else:
-                    labels[na].append(label)
+            redo = True 
+            while redo:
+                pprint.pprint(c)
+                label = raw_input(prompt).lower().strip()
+                if not label:
+                    continue
+                redo = False
+                na = self.name_attr(c[0])
+                try:
+                    num = int(label)
+                    if num == 0:
+                        label = 'user'
+                    elif num == 1:
+                        label = 'utitle'
+                    elif num == 2:
+                        label = 'msg'
+                    elif num == 3:
+                        label = 'date'
+                    elif num == 4:
+                        label = 'joindate'
+                    elif num == 6:
+                        label = 'sig'
+                    elif num == 7:
+                        label = 'edits'
+                    if na in labels.keys():
+                        labels[na].append(label)
+                    else:
+                        labels[na] = [label]
+                except:
+                    if label == 'd':
+                        label = "d%d"%i
+                        labels[na].append(label)
+                        continue
+                    else:
+                        labels[na].append(label)
+                finally:
                     for elem in c:
                         print elem.text
                     text = raw_input("Store text instead of raw tags? (y/[n]) ").lower().strip()
+                    if text == 'y':
+                        self.use_text[label] = True
+                    else:
+                        self.use_text[label] = False
             stats = self.calc_stats(c)
             clusters[stats] = label
             print "----------"
         return labels, clusters, use_text
     
-    def extract_content(self, soup):
+    def extract_contents(self, soup):
         """Extracts content of a soup, given training data"""
         if not self.depth:
             print "Error: Need to train data first."
             return
         tbd = self.get_tags_by_depth(soup)
         tags = [self.get_tags_by_string(out, tbd[self.depth]) for out in self.outliar_names]
-        contents = self.extract_contents(tags)
+        contents = self.further_extract_contents(tags)
         return contents 
     
     def label_contents(self, contents):
         content_dict = defaultdict(str) 
         for c in contents:
             na = self.name_attr(c[0])
-            if na not in self.labels.keys():
-                print "%s has not appeared in training data." % na
-            else:
+            if na in self.labels.keys():
                 # candidate labels
                 clabels = self.labels[na]
                 if len(clabels)==1:
@@ -465,10 +485,9 @@ class GenericParser:
                         if ratio < min_ratio:
                             min_ratio = ratio
                             min_label = cands[k]
+                    print min_label, min_ratio
                     content_dict[cands[k]] = c
 
-        self.ready = True
-        self.training = False
         return content_dict
    
 
@@ -574,8 +593,8 @@ class GenericParser:
         Takes a dictionary where the values are integer counts.
         Returns a list of the keys where the values are two standard deviations above the mean.
         """
-        m = mean(D.values())
-        s = std(D.values())
+        m = self.mean(D.values())
+        s = self.std(D.values())
         k = filter(lambda x: x[1] > m + 2*s, D.items())
         if k:
             return zip(*k)[0]
@@ -655,8 +674,8 @@ class GenericParser:
                 data.extend([tag.getText()])
         return data
     """
-    def extract_contents(self, page):
-        """extract_contents(outnames, page, depth)
+    def further_extract_contents(self, page):
+        """further_extract_contents(outnames, page, depth)
         this takes each post, which consists of several large and nested
         div/tables, and extracts the subcontents that are identical across posts
         
@@ -665,7 +684,6 @@ class GenericParser:
         newt = []
         posts = []
         for item in page:
-            children = [tag() for tag in item] 
             
             cbd = map(self.get_tags_by_depth, item)
             dbc = zip(*cbd)
@@ -684,10 +702,9 @@ class GenericParser:
                                 tag = [self.get_tags_by_string(name, entries) for entries in dbc[i]]
                                 ts = zip(*tag)
                                 for t in ts:
-                                    
                                     map(self.extract_boring_tag, t)
                                     map(lambda x: x.extract(), t)
-                                    if self.is_boring(t[0]):
+                                    if all(self.is_boring(x) for x in t):
                                         continue
                                     if all(t[0] == x for x in t):
                                         continue
@@ -722,8 +739,8 @@ class GenericParser:
     def std(self, li):
         """returns standard deviation of a list"""
 
-        m = mean(li)
-        return sqrt(mean([abs(x-m) for x in li]))
+        m = self.mean(li)
+        return sqrt(self.mean([abs(x-m) for x in li]))
 
 """
 def of(name, num, suffix=""):

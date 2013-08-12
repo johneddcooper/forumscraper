@@ -136,7 +136,7 @@ def get_thread_id(con, cur, thread, sf_id):
 def insert_data(con, cur, post):
   """Inserts the data into the database
 
-  INPUTS: MySQLdb Connection object, MySQLdb Cursor object, Post object
+  INPUTS: MySQLdb Connection object, MySQLdb Cursor object, Post defaultdict 
   RETURNS: tuple (post id, user id)"""
   #print post
   f_id = get_id( cur, "FORUMS", "forum_url", post['home'])
@@ -206,8 +206,8 @@ def insert_data(con, cur, post):
                         raise
 			return (0, 0)
 		post_id = get_id(cur, "POSTS", "postlink", post["plink"])
-  print "post images: "
-  print post["images"]
+  #print "post images: "
+  #print post["images"]
   if not post["images"]: return (post_id, user_id)
   for image in post["images"]:
   	image_id = get_id(cur, "IMAGES", "image_src", image)
