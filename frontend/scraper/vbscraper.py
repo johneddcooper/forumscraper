@@ -321,6 +321,10 @@ def scrape_thread(browser, home, con, cur):
       save_session_data()
     thread_page+=1
     """
+def init_browser():
+    browser = webdriver.Firefox()
+    browser.set_page_load_timeout(5)
+    return browser
 
 def main():
 
@@ -333,9 +337,7 @@ def main():
         image_dir = imaget.create_image_dir("images")
 
         ##initialize selenium
-        browser = webdriver.Firefox()
-        browser.set_page_load_timeout(5)
-
+        browser = init_browser()
         ##setup mysql db
         con, cur = dblib.setup_db()
 
