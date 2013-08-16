@@ -13,6 +13,7 @@ import multiprocessing
 from multiprocessing import Value
 import logging
 import cPickle
+import argparse
 
 import MySQLdb as mdb
 
@@ -31,7 +32,7 @@ mysql_host = host
 mysql_username = user
 mysql_password = passwd
 
-generic = True
+generic = False 
 vbulletin = False
 archives = False
 
@@ -48,6 +49,16 @@ state = [0, 0]
 pfile = ""
 
 con, cur = dblib.setup_db()
+
+def parse_args(args):
+    parser = argparse.ArgumentParser(description="Scrape a forum")
+    parser.add_argument("url")
+    parser.add_argument("num")
+    type_scrape = parser.add_mutually_exclusive_group()
+    type_scrape.add_argument("--archives", action="store_true")
+    type_scrape.add_argument("--vbulletin", action="store_true")
+    type_scrape.add_argument("--generic", action="store_true")
+    return parser.parse_args(args)
 
 def clear_queue():
     q = HotQueue(home)
@@ -282,10 +293,19 @@ def worker(q, qf, qt):
 
 def init_workers(num):
     global scout, worker, parser
+    
+    # q contains list of threads, scraped by the scout
     q = HotQueue(home)
+
+    # qf contains list of tuples of len 3
+    # contains source code of scraped pages and metadata, for parser
+    # (subforum name, link of post, post source)
     qf = HotQueue(home + "_sources")
+    
+    # boolean variable that describes whether the Parser is training
+    # (only used for GenericParser)
     qt = Value('b', False)
-    si = sys.stdin.fileno()
+    
     workers = []
     scout = multiprocessing.Process(target=scout, args=(q,))
     scout.start()
@@ -305,11 +325,9 @@ def init_workers(num):
     q.clear()
     qf.clear()
 
-if len(sys.argv) < 2:
-    print "Usage: python scraper.py link"
-
+args = parse_args(sys.argv[1:])
+home = args.url
 #q = JoinableQueue()
-home = sys.argv[1]
 hdir = "./" + re.sub("^http://", "", home)
 if not os.path.isdir(hdir):
     os.mkdir(hdir)
@@ -326,11 +344,14 @@ except:
     q.clear()
     qf.clear()
 
-if vbulletin:
+if args.vbulletin:
+    vbulletin = True
     P = vBulletinParser()
-elif archives:
+elif args.archives:
+    archives = True
     P = ArchiveParser()
 else:
+    generic = True
     P = GenericParser()
 
 temp = urlparse.urljoin("http:////", home)
@@ -338,5 +359,5 @@ archive_link = urlparse.urljoin(temp, "/archive/index.php")
 print archive_link
 atexit.register(save_state)
 
-init_workers(5)
+init_workers(args.num)
 
