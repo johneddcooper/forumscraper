@@ -51,7 +51,7 @@ pfile = ""
 con, cur = dblib.setup_db()
 
 def parse_args(args):
-    parser = argparse.ArgumentParser(description="Scrape a forum")
+    parser = argparse.ArgumentParser(description="Scrape a forum", add_help=False)
     parser.add_argument("url")
     parser.add_argument("num")
     type_scrape = parser.add_mutually_exclusive_group()
@@ -189,7 +189,7 @@ def get_threads(br):
 def add_to_database(subforum, link, post):
     # post is a defaultdict that defaults to ""
     post['home'] = home
-    post['subforum'] = subforum
+    post['subname'] = subforum
     post['thread'] = link 
     if not post['plink']:
         post['plink'] = link 
@@ -359,5 +359,10 @@ archive_link = urlparse.urljoin(temp, "/archive/index.php")
 print archive_link
 atexit.register(save_state)
 
-init_workers(args.num)
+try:
+    num = int(args.num)
+except:
+    print "num argument needs to be an integer"
+    sys.exit()
 
+init_workers(num)

@@ -160,13 +160,13 @@ class vBulletinParser(Parser):
         for p in posts:
             post_link = p.find('a', attrs={'name': lambda x: x and re.match(r'\d+', x)})['href']
             post_string = str(p)
-            raw_message = extract(post_string, message_marker[0], message_marker[1])
+            raw_message = self.extract(post_string, message_marker[0], message_marker[1])
 
-            date = extract(post_string, date_marker[0], date_marker[1])
-            date = strip_tags(date).strip()
+            date = self.extract(post_string, date_marker[0], date_marker[1])
+            date = self.strip_tags(date).strip()
             message = self.get_message(raw_message)
-            sig = extract(post_string, sig_marker[0], sig_marker[1])
-            edit = extract(post_string, edit_marker[0], edit_marker[1])
+            sig = self.extract(post_string, sig_marker[0], sig_marker[1])
+            edit = self.extract(post_string, edit_marker[0], edit_marker[1])
 
             msg_image_srcs = imaget.get_image_src(raw_message)
             if msg_image_srcs: msg_image_srcs = msg_image_srcs[0]
@@ -177,7 +177,7 @@ class vBulletinParser(Parser):
             user = self.get_user(post_string, sig)
             ddict = defaultdict(str)
             ddict.update( dict(
-                { 'date': date, 'message': message,
+                { 'date': date, 'msg': message,
                     'edit': edit, 'images': msg_image_srcs,
                     'plink': post_link
                 }.items() + user.items()))
