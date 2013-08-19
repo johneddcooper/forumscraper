@@ -416,7 +416,7 @@ class GenericParser:
                 try:
                     num = int(label)
                     if num == 0:
-                        label = 'user'
+                        label = 'name'
                     elif num == 1:
                         label = 'utitle'
                     elif num == 2:
@@ -425,29 +425,25 @@ class GenericParser:
                         label = 'date'
                     elif num == 4:
                         label = 'joindate'
-                    elif num == 6:
+                    elif num == 5:
                         label = 'sig'
-                    elif num == 7:
-                        label = 'edits'
+                    elif num == 6:
+                        label = 'edit'
+                except:
+                    if label == 'd':
+                        label = "d%d"%i
+                finally:
                     if na in labels.keys():
                         labels[na].append(label)
                     else:
                         labels[na] = [label]
-                except:
-                    if label == 'd':
-                        label = "d%d"%i
-                        labels[na].append(label)
-                        continue
-                    else:
-                        labels[na].append(label)
-                finally:
                     for elem in c:
                         print elem.text
                     text = raw_input("Store text instead of raw tags? (y/[n]) ").lower().strip()
                     if text == 'y':
-                        self.use_text[label] = True
+                        use_text[label] = True
                     else:
-                        self.use_text[label] = False
+                        use_text[label] = False
             stats = self.calc_stats(c)
             clusters[stats] = label
             print "----------"
@@ -455,9 +451,6 @@ class GenericParser:
     
     def extract_contents(self, soup):
         """Extracts content of a soup, given training data"""
-        if not self.depth:
-            print "Error: Need to train data first."
-            return
         tbd = self.get_tags_by_depth(soup)
         tags = [self.get_tags_by_string(out, tbd[self.depth]) for out in self.outliar_names]
         contents = self.further_extract_contents(tags)
@@ -489,7 +482,6 @@ class GenericParser:
                     content_dict[cands[k]] = c
 
         return content_dict
-   
 
     def get_tags_by_depth(self, soup):
         """get_tags_by_depth(soup)
@@ -531,7 +523,6 @@ class GenericParser:
 
         return all(k1 in s2 for k1 in s1) and \
                 all(k2 in s1 for k2 in s2)
-
 
     def name_attr(self, tag, strip_nums=1, strip_orphans=0, strip_links=0):
         """name_attr(tag, strip_nums=1, strip_orphans=0, strip_links=1)
@@ -595,7 +586,8 @@ class GenericParser:
         """
         m = self.mean(D.values())
         s = self.std(D.values())
-        k = filter(lambda x: x[1] > m + 2*s, D.items())
+        k = filter(lambda x: x[1] > m, D.items())
+        #k = filter(lambda x: x[1] > m + 2*s, D.items())
         if k:
             return zip(*k)[0]
 
@@ -695,6 +687,9 @@ class GenericParser:
             for i in xrange(len(dbc_names)-1, -1, -1):
                 depth = dbc_names[i]
                 for entry in depth:
+                    maybe = [self.get_tags_by_string(entry, entries) for entries in dbc[i]]
+                    tts = [tl for tl in maybe if all(len(t())!=0 for t in tl)]
+                    print entry 
                     for name in entry:
                         if name and name not in tagged:
                             if all(name in other_entries for other_entries in depth):
@@ -708,6 +703,7 @@ class GenericParser:
                                         continue
                                     if all(t[0] == x for x in t):
                                         continue
+                                    print t
                                     tags.append(t)
             if tags:
                 posts.extend(tags)

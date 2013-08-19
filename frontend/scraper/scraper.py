@@ -34,7 +34,7 @@ mysql_password = passwd
 
 generic = False 
 vbulletin = False
-archives = False
+#archives = False
 
 re_sort = re.compile(r"\d*(?=\.html)")
 re_uid = re.compile(r"\d*$")
@@ -47,15 +47,16 @@ archive_link = ""
 P = None
 state = [0, 0] 
 pfile = ""
-
+save_files = False
 con, cur = dblib.setup_db()
 
 def parse_args(args):
     parser = argparse.ArgumentParser(description="Scrape a forum", add_help=False)
     parser.add_argument("url")
     parser.add_argument("num")
+    parser.add_argument("--save_files", action="store_true")
     type_scrape = parser.add_mutually_exclusive_group()
-    type_scrape.add_argument("--archives", action="store_true")
+    #type_scrape.add_argument("--archives", action="store_true")
     type_scrape.add_argument("--vbulletin", action="store_true")
     type_scrape.add_argument("--generic", action="store_true")
     return parser.parse_args(args)
@@ -255,10 +256,11 @@ def save_file(subforum, link, source, qf):
     subforum = subforum.decode('utf8').encode('utf8')
     soup = bs(source)
     hlink = re.sub("/", "", link)
-    f = open("%s/%s" % (hdir, hlink), "w")
-    f.write(soup.renderContents())
-    f.flush()
-    f.close()
+    if save_files:
+        f = open("%s/%s" % (hdir, hlink), "w")
+        f.write(soup.renderContents())
+        f.flush()
+        f.close()
     #contents = cPickle.dumps((subforum.encode('utf8'), link, source.encode('utf8')))
     qf.put((subforum, link, source))
 
@@ -328,10 +330,13 @@ def init_workers(num):
 args = parse_args(sys.argv[1:])
 home = args.url
 #q = JoinableQueue()
+save_files = args.save_files
+
 hdir = "./" + re.sub("^http://", "", home)
-if not os.path.isdir(hdir):
-    os.mkdir(hdir)
+if save_files and not os.path.isdir(hdir):
+        os.mkdir(hdir)
 pfile = hdir[2:] + ".p"
+
 
 try:
     with open(pfile, "r") as f:
@@ -347,9 +352,9 @@ except:
 if args.vbulletin:
     vbulletin = True
     P = vBulletinParser()
-elif args.archives:
-    archives = True
-    P = ArchiveParser()
+#elif args.archives:
+#    archives = True
+#    P = ArchiveParser()
 else:
     generic = True
     P = GenericParser()
@@ -359,10 +364,5 @@ archive_link = urlparse.urljoin(temp, "/archive/index.php")
 print archive_link
 atexit.register(save_state)
 
-try:
-    num = int(args.num)
-except:
-    print "num argument needs to be an integer"
-    sys.exit()
-
+num = int(args.num)
 init_workers(num)
