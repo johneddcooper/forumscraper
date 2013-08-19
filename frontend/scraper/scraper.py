@@ -10,8 +10,10 @@ import subprocess
 from collections import Counter, defaultdict
 import pdb
 import multiprocessing
+from multiprocessing import Value
 import logging
 import cPickle
+import argparse
 
 import MySQLdb as mdb
 
@@ -30,9 +32,9 @@ mysql_host = host
 mysql_username = user
 mysql_password = passwd
 
-generic = True
+generic = False 
 vbulletin = False
-archives = False
+#archives = False
 
 re_sort = re.compile(r"\d*(?=\.html)")
 re_uid = re.compile(r"\d*$")
@@ -45,11 +47,29 @@ archive_link = ""
 P = None
 state = [0, 0] 
 pfile = ""
-
+save_files = False
 con, cur = dblib.setup_db()
 
+def parse_args(args):
+    parser = argparse.ArgumentParser(description="Scrape a forum", add_help=False)
+    parser.add_argument("url")
+    parser.add_argument("num")
+    parser.add_argument("--save_files", action="store_true")
+    type_scrape = parser.add_mutually_exclusive_group()
+    #type_scrape.add_argument("--archives", action="store_true")
+    type_scrape.add_argument("--vbulletin", action="store_true")
+    type_scrape.add_argument("--generic", action="store_true")
+    return parser.parse_args(args)
+
+def clear_queue():
+    q = HotQueue(home)
+    qf = HotQueue(home + "_sources")
+    q.clear()
+    qf.clear()
+
 def save_state():
-    cPickle.dump(state, pfile)
+    with open(pfile, "w") as f:
+        cPickle.dump(state, f)
 
 def init_selenium(profile=None):
     br = webdriver.Firefox(profile)
@@ -101,10 +121,9 @@ def get_thread_pages(br, link):
         if candidates:
             page_nums = [int(re.search(r"(?<=&page=)(\d*)", url).groups()[-1]) for url in candidates]
             max_page = max(page_nums)
-            print link
             return [link + "&page=%d"%i for i in range(2, max_page+1)]
         else:
-            candidates = filter(lambda url: re.search(r"(&page=)|(&start=)", url), urls)
+            candidates = filter(lambda url: re.search(r"(&start=)", url), urls)
             if not candidates:
                 return
             page_nums = [int(re.search(r"(?<=&start=))(\d*)", url).groups()[-1]) for url in candidates]
@@ -169,10 +188,14 @@ def get_threads(br):
         yield get_threads_on_page(br, stub)
 
 def add_to_database(subforum, link, post):
-    print "OMG THINGS ARE BEING ADDED TO THE DATABASE!!! %s" % link
+    # post is a defaultdict that defaults to ""
     post['home'] = home
-    post['subforum'] = subforum
-    dblib.insert_post(con, cur, post)
+    post['subname'] = subforum
+    post['thread'] = link 
+    if not post['plink']:
+        post['plink'] = link 
+    print post
+    dblib.insert_data(con, cur, post)
 
 def scout(q):
     br = init_selenium()
@@ -196,7 +219,8 @@ def scout(q):
         state[0] += 1
     return
 
-def parser(qf):
+def parser(qf, qt):
+    global training, P
     contents = qf.get()
     while contents != "-sentinel-":
         if not contents:
@@ -205,34 +229,42 @@ def parser(qf):
         sf, link, src = contents
         #sf, link, src = cPickle.loads(contents)
         print "Parsing link %s" %link
-        if generic and not P.is_ready():
+        if generic and not P.ready:
             # if adding this source pushes P over the training data threshold,
             # it will return the last five pages' parsed
-            maybe_results = P.add_source(src)
-            if maybe_results:
-                for pages in maybe_results:
+            if P.add_source(src):
+                qt.value=True
+                results = P.train_and_parse()
+                qt.value=False
+                for pages in results:
                     for post in pages:
                         add_to_database(sf, link, post)
         else: 
-            posts = P.parse()
-            for post in posts:
-                add_to_database(sf, link, post)
+            posts = P.parse(src)
+            if not posts:
+                print "No post data. Weird."
+                # dump source to log file?
+                print src
+            else:
+                for post in posts:
+                    add_to_database(sf, link, post)
 
         contents = qf.get()
 
 def save_file(subforum, link, source, qf):
-    subforum = subforum.decode('latin1').encode('utf8')
-    source = subforum.decode('latin1').encode('utf8')
+    global training
+    subforum = subforum.decode('utf8').encode('utf8')
+    soup = bs(source)
     hlink = re.sub("/", "", link)
-    f = open("%s/%s" % (hdir, hlink), "w")
-    f.write(source)
-    f.flush()
-    print "Saving page %s" % (link)
-    f.close()
+    if save_files:
+        f = open("%s/%s" % (hdir, hlink), "w")
+        f.write(soup.renderContents())
+        f.flush()
+        f.close()
     #contents = cPickle.dumps((subforum.encode('utf8'), link, source.encode('utf8')))
     qf.put((subforum, link, source))
 
-def worker(q, qf):
+def worker(q, qf, qt):
     br = init_selenium()
     for job in q.consume(timeout=5):
         if not job:
@@ -245,27 +277,37 @@ def worker(q, qf):
             thread = br.current_url
             thread_pages = get_thread_pages(br, link)
             if thread_pages:
-                print "Got %d thread pages from %s" % (len(thread_pages), link)
-                print thread_pages
                 for tp in thread_pages:
                     # contents = cPickle.dumps((subforum, thread, tp))
                     q.put((subforum, thread, tp)) 
         elif len(job) == 3:
-            print "Downloaded page:", link
             subforum, thread, link = job
             visit_page(br, link)
         else:
             # this should never happen
             print "Malformed job length. Job:", job
         source = br.page_source
-        save_file(subforum, link, source, qf)
-        while P.is_training():
+        while qt.value:
             sleep(1)
+        print "Saving page %s" % (link)
+        save_file(subforum, link, source, qf)
+    qf.put("-sentinel-") # sentinel
 
 def init_workers(num):
     global scout, worker, parser
+    
+    # q contains list of threads, scraped by the scout
     q = HotQueue(home)
+
+    # qf contains list of tuples of len 3
+    # contains source code of scraped pages and metadata, for parser
+    # (subforum name, link of post, post source)
     qf = HotQueue(home + "_sources")
+    
+    # boolean variable that describes whether the Parser is training
+    # (only used for GenericParser)
+    qt = Value('b', False)
+    
     workers = []
     scout = multiprocessing.Process(target=scout, args=(q,))
     scout.start()
@@ -273,52 +315,54 @@ def init_workers(num):
     workers.append(scout)
     sleep(15)
     for i in xrange(num):
-        tmp = multiprocessing.Process(target=worker, args=(q,qf,))
+        tmp = multiprocessing.Process(target=worker, args=(q,qf,qt,))
         tmp.start()
         print "Starting worker process %s" % str(tmp.pid)
         workers.append(tmp)
-    parser = multiprocessing.Process(target=parser, args=(qf,))
-    parser.start()
-    print "Starting parser process %s" % str(parser.pid)
+    print "Using main process as parser."
+    parser(qf,qt)
     for worker in workers:
         worker.join()
-    qf.put("-sentinel-") # sentinel
-    parser.join()
     print "All done."
     q.clear()
     qf.clear()
 
-if len(sys.argv) < 2:
-    print "Usage: python scraper.py link"
-
+args = parse_args(sys.argv[1:])
+home = args.url
 #q = JoinableQueue()
-home = sys.argv[1]
+save_files = args.save_files
+
 hdir = "./" + re.sub("^http://", "", home)
-if not os.path.isdir(hdir):
-    os.mkdir(hdir)
+if save_files and not os.path.isdir(hdir):
+        os.mkdir(hdir)
+pfile = hdir[2:] + ".p"
+
 
 try:
-    pfile = open(hdir[2:] + ".p", "rw")
-    state = cPickle.load(pfile)
-except IOError:
+    with open(pfile, "r") as f:
+        state = cPickle.load(f)
+except:
     # no pickle file; fresh start
-    pfile = open(hdir[2:] + ".p", "w")
     state = [0, 0] 
     q = HotQueue(home)
     qf = HotQueue(home + "_sources")
     q.clear()
     qf.clear()
 
-if vbulletin:
+if args.vbulletin:
+    vbulletin = True
     P = vBulletinParser()
-elif archives:
-    P = ArchiveParser()
+#elif args.archives:
+#    archives = True
+#    P = ArchiveParser()
 else:
+    generic = True
     P = GenericParser()
 
-archive_link = urlparse.urljoin(home, "/archive/index.php")
+temp = urlparse.urljoin("http:////", home)
+archive_link = urlparse.urljoin(temp, "/archive/index.php")
 print archive_link
 atexit.register(save_state)
 
-init_workers(5)
-
+num = int(args.num)
+init_workers(num)
