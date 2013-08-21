@@ -32,8 +32,8 @@ DROP TABLE IF EXISTS `FORUMS`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `FORUMS` (
   `forum_id` int(11) NOT NULL AUTO_INCREMENT,
-  `forum_name` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `forum_url` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `forum_name` varchar(300) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `forum_url` varchar(300) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`forum_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -44,8 +44,8 @@ DROP TABLE IF EXISTS `SUBFORUMS`;
 
 CREATE TABLE `SUBFORUMS` (
   `subforum_id` int(11) NOT NULL AUTO_INCREMENT,
-  `subforum_name` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `subforum_url` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `subforum_name` varchar(300) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `subforum_url` varchar(300) COLLATE utf8_unicode_ci DEFAULT NULL,
   `forum_id` int(11) REFERENCES FORUMS(forum_id),
   PRIMARY KEY (`subforum_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
@@ -59,7 +59,7 @@ CREATE TABLE `THREADS` (
   `thread_id` int(11) NOT NULL AUTO_INCREMENT,
   `thread_name` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
   `subforum_id` int(11) REFERENCES SUBFORUMS(subforum_id),
-  `subforum_page` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `subforum_page` varchar(300) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`thread_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -70,8 +70,8 @@ DROP TABLE IF EXISTS `POSTS`;
 
 CREATE TABLE `POSTS` (
   `post_id` int(11) NOT NULL AUTO_INCREMENT,
-  `postdate` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `postlink` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `postdate` varchar(300) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `postlink` varchar(1000) COLLATE utf8_unicode_ci DEFAULT NULL,
   `msg` varchar(100000) COLLATE utf8_unicode_ci DEFAULT NULL,
   `edits` varchar(1000) COLLATE utf8_unicode_ci DEFAULT NULL,
   `thread_id` int(11) REFERENCES THREADS(thread_id),
@@ -89,9 +89,9 @@ DROP TABLE IF EXISTS `USERS`;
 CREATE TABLE `USERS` (
   `user_id` int(11) NOT NULL AUTO_INCREMENT,
   `forum_id` int(11) REFERENCES FORUMS(forum_id),
-  `username` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `usertitle` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `joindate` varchar(50) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `username` varchar(300) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `usertitle` varchar(300) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `joindate` varchar(300) COLLATE utf8_unicode_ci DEFAULT NULL,
   `sig` varchar(10000) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
@@ -107,7 +107,7 @@ CREATE TABLE `IMAGES` (
   `thread_id` int(11) REFERENCES THREADS(thread_id),
   `user_id` int(11) REFERENCES USERS(user_id),
   `post_id` int(11) REFERENCES POSTS(post_id),
-  `image_src` varchar(200) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `image_src` varchar(500) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`image_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
