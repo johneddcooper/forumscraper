@@ -65,7 +65,7 @@ def parse_args(args):
 def init_logger():
     logging.basicConfig(filename='%s.log'%home,level=logging.INFO)
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
 def clear_queue():
     q = HotQueue(home)

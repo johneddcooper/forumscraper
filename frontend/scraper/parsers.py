@@ -18,7 +18,6 @@ from BeautifulSoup import BeautifulSoup as bs
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-
 date_marker = ["<!-- status icon and date -->", "<!-- / status icon and date -->"]
 message_marker = ["<!-- message -->", "<!-- / message -->"]
 sig_marker = ["<!-- sig -->", "<!-- / sig -->"]
@@ -41,7 +40,7 @@ class ArchiveParser(Parser):
         b = bs(src)
         posts = b.findAll('div', attrs={'class':'post'})
         if not posts:
-            print "Error: No posts" 
+            logger.error("Error: No posts")
             raise
         i = 0
         post_list = []
@@ -49,7 +48,7 @@ class ArchiveParser(Parser):
             p = posts[i]
             raw_auth = p.find('div', attrs={'class':'author'})
             if not raw_auth or not raw_auth.text:
-                print "Error: No author on post %d" % (i)
+                logger.error("Error: No author on post %d" % (i))
                 continue
             auth = raw_auth.text.encode('utf8')
             raw_auth_link = raw_auth.find('a')
@@ -61,13 +60,13 @@ class ArchiveParser(Parser):
                 auth_id = ""
             raw_dateline = p.find('div', attrs={'class':'dateline'})
             if not raw_dateline or not raw_dateline.text:
-                print "Error: No dateline on post %d" % (i)
+                logger.error("Error: No dateline on post %d" % (i))
                 continue
             dateline = raw_dateline.text.encode('utf8')
 
             message = p.find('div', attrs={'class':'message'})
             if not message:
-                print "Error: No message on post %d" % (i)
+                logger.error("Error: No message on post %d" % (i))
                 continue 
             #imgs = message.findAll("img")
             #img_links = []
@@ -313,12 +312,12 @@ class GenericParser:
         return map(self.parse, self.sources)
 
     def load(self):
-        with open("%s.p"%self.name, "r") as f:
+        with open("%s_parser.p"%self.name, "r") as f:
             self.labels, self.clusters, self.use_text, self.depth, self.outliar_names = pickle.load(f)
     
     def parse(self, src):
         if len(self.sources) < self.min_soups:
-            print "Parser not yet trained."
+            logger.error("Parser not yet trained.")
             raise
         soup = bs(src)
         contents = self.extract_contents(soup)
@@ -346,7 +345,7 @@ class GenericParser:
     def train(self):
         """Train over list of soups to find location/names of relevant tags"""
         if len(self.sources) < self.min_soups:
-            print "Not enough training data. Add more before training."
+            logger.error("Not enough training data. Add more before training.")
             raise
         soups = map(bs, self.sources)
         dbfs = map(self.get_tags_by_depth, soups)
@@ -362,7 +361,7 @@ class GenericParser:
         # len(dbfs) is the maximum tag depth of all the pages.
 
         if len(fbds) < 3:
-            print "Min depth not achieved."
+            logger.error("Min depth not achieved.")
             sys.exit()
         #print "Beginning comparison at depth level", len(fbds)/3
 
@@ -372,7 +371,7 @@ class GenericParser:
                 break
         self.depth = i
         if self.depth==len(fbds)-1:
-            print "Unusually homogenous webpage. You may continue, at your own risk."
+            logger.warning("Unusually homogenous webpage. You may continue, at your own risk.")
             
         for i in xrange(len(fbds)):
             fbds[i] = [item for sublist in fbds[i] for item in sublist]
@@ -383,7 +382,7 @@ class GenericParser:
         self.outliar_names = outliars 
         contents = self.extract_contents(soups[0])
         self.labels, self.clusters, self.use_text = self.get_labels(contents)
-        with open("%s.p"%self.name, "w") as f:
+        with open("%s_parser.p"%self.name, "w") as f:
             pickle.dump((self.labels, self.clusters, self.use_text, self.depth, self.outliar_names), f)
 
     def get_labels(self, contents):
@@ -489,11 +488,10 @@ class GenericParser:
                     min_label = ""
                     for k in cands.keys():
                         ratio = calc_ratio(c, k)
-                        print "Ratio between %s and %s: %f" % (na, k, ratio)
+                        logger.debug("Ratio between %s and %s: %f" % (na, k, ratio))
                         if ratio < min_ratio:
                             min_ratio = ratio
                             min_label = cands[k]
-                    print min_label, min_ratio
                     content_dict[cands[k]] = c
 
         return content_dict
