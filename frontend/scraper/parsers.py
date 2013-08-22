@@ -157,7 +157,7 @@ class vBulletinParser(Parser):
                 page = 1
         """
         posts = page_soup.findAll('table', attrs={'id':lambda x: x and re.match(r'post', x)})
-        logging.info('get_post: got %d posts' % len(posts))
+        logger.info('get_post: got %d posts' % len(posts))
         post_list = []
         for p in posts:
             post_link = p.find('a', attrs={'name': lambda x: x and re.match(r'\d+', x)})['href']

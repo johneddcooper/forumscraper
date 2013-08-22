@@ -74,7 +74,7 @@ def init_logger():
     global logger
     logging.basicConfig(filename='%s.log'%home,level=logging.DEBUG)
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
 def clear_queue():
     q = HotQueue(home)
@@ -164,13 +164,16 @@ def get_subforums(br):
 
 def get_threads_on_page(br, stub):
     urls = get_urls(br)
+    if not urls:
+        logger.error("No urls on page...")
+        logger.error(stub)
+        return
     stub_template = strip_num(stub)
     no_nums = map(strip_num, urls)
     ctr = Counter()
     for elem in no_nums:
         if not elem.startswith(stub_template):
             ctr[elem]+=1
-
     thread_template = ctr.most_common(1)[0][0]
     page_threads = filter(lambda x: strip_num(x)==thread_template, urls)
     return page_threads
@@ -295,7 +298,7 @@ def worker(q, qf, qt, d, dr):
     br = init_selenium()
     for job in q.consume(timeout=5):
         if (d and dr) and (d >= dr):
-            delay = random.triangular(d-dr, d+dr)
+            delay = random.uniform(d-dr, d+dr)
             sleep(delay)
         if not job:
             break
