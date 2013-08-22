@@ -35,7 +35,7 @@ def get_item(cur, table, col, id_name, ID):
         row = cur.fetchone()
         if row: return row[0]
     except mdb.Error:
-        logger.error("Cannot find item")
+        logger.error("Cannot finde item")
     return None
     
 
@@ -47,7 +47,7 @@ def get_id( cur, table, id_name, name):
 
   regex = re.compile(r'["\']')
   name = regex.sub('', name)
-  #if id_name == "thread_name":  logger.debug("thread name: %s", name)
+  if id_name == "thread_name":  logger.debug("thread name: %s", name)
   command = "SELECT * FROM %s WHERE %s = \"%s\";" % (table, id_name, name)
   #print command
   try:
@@ -141,9 +141,16 @@ def insert_data(con, cur, post):
 
   #escape everything
   for key in post.keys():
-      if key == 'tag': continue
+      if key in ['tag', 'msg', 'edit', 'images'] or (not post[key]): continue
+
       print key
-      post[key] = con.escape_string(post[key])
+      try:
+          inmate = post[key].encode('utf8')
+      except UnicodeDecodeError: 
+          inmate = post[key]
+      print inmate
+      print "Type:", type(inmate)
+      post[key] = con.escape_string(inmate).decode('utf8')
 
   #print post
   f_id = get_id( cur, "FORUMS", "forum_url", post['home'])
@@ -169,6 +176,7 @@ def insert_data(con, cur, post):
 		except:
 			print "ERROR: Could not add %s into subforums table" % post["subname"]
 			logger.error("Could not add %s into subforums table", post["subname"])
+                        raise
 			return (0, 0)
 		sf_id = get_id(cur, "SUBFORUMS", "subforum_name", post["subname"])
   #print sf_id
@@ -192,7 +200,7 @@ def insert_data(con, cur, post):
   if not user_id:
 		#print "post id not found\nPOST MESSAGE: %s\n\n" % (post["msg"])
 		try:
-			cur.execute("INSERT INTO USERS (forum_id, username, usertitle, joindate, sig) VALUES (%s, %s, %s, %s, %s)", (f_id, post["name"], post["title"], post["joindate"], post["sig"]))
+			cur.execute("INSERT INTO USERS (forum_id, username, usertitle, joindate, sig) VALUES (%s, %s, %s, %s, %s)", (f_id, post["name"], post["utitle"], post["joindate"], post["sig"]))
 			con.commit()
 		except:
 			print "ERROR: Could not add %s into users table" % post["name"]
