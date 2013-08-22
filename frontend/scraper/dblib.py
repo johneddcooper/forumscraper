@@ -35,7 +35,7 @@ def get_item(cur, table, col, id_name, ID):
         row = cur.fetchone()
         if row: return row[0]
     except mdb.Error:
-        logger.error("Cannot finde item")
+        logger.error("Cannot find item")
     return None
     
 
@@ -47,7 +47,7 @@ def get_id( cur, table, id_name, name):
 
   regex = re.compile(r'["\']')
   name = regex.sub('', name)
-  if id_name == "thread_name":  logger.debug("thread name: %s", name)
+  #if id_name == "thread_name":  logger.debug("thread name: %s", name)
   command = "SELECT * FROM %s WHERE %s = \"%s\";" % (table, id_name, name)
   #print command
   try:
