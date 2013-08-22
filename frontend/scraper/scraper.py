@@ -205,7 +205,7 @@ def get_threads(br):
 def add_to_database(subforum, link, post):
     # post is a defaultdict that defaults to ""
     post['home'] = home
-    post['subname'] = subforum
+    post['subname'] = subforum#.decode('utf8')
     post['thread'] = link 
     if not post['plink']:
         post['plink'] = link 
@@ -369,7 +369,8 @@ if args.delay_range:
 save_files = args.save_files
 
 home = re.sub("/$", "", home)
-hdir = "./" + re.sub("^http://", "", home)
+home = re.sub("^http://", "", home)
+hdir = "./" + home
 if save_files and not os.path.isdir(hdir):
         os.mkdir(hdir)
 pfile = hdir[2:] + ".p"
