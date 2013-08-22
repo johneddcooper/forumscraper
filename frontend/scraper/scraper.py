@@ -223,6 +223,7 @@ def scout(q):
             i += 1
         state[1] = 0
         state[0] += 1
+    logger.info("Scout finished")
     return
 
 def parser(qf, qt):
@@ -283,6 +284,8 @@ def worker(q, qf, qt):
             thread = br.current_url
             thread_pages = get_thread_pages(br, link)
             if thread_pages:
+                logger.debug("Added thread pages to queue:")
+                logger.debug(thread_pages)
                 for tp in thread_pages:
                     # contents = cPickle.dumps((subforum, thread, tp))
                     q.put((subforum, thread, tp)) 
