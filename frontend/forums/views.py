@@ -16,39 +16,58 @@ class search_form(forms.Form):
     end_date = forms.DateField()
     
 
+def valid(value, request):
+    if value in request.GET and request.GET[value]:
+        return request.GET[value]
+    else:
+        return None
+
+
 def search(request):
-    if request.method == 'POST':
-        form = search_form(request.POST)
-        if form.is_valid():
-             #process form data here
-             print "in form data"
-             search_text = form.cleaned_data['text']
-             forum = form.cleaned_data['forum']
-             user = form.cleaned_data['user']
-             post_list = Posts.objects.filter(msg__icontains=search_text)
+    if request.method == 'GET':
+        text = valid('text', request)
+        forum = valid('forum', request)
+        user = valid('user', request)
+        user_id = None
 
-             if forum:
-                 forum = Forums.objects.filter(name=forum)
-                 if forum: post_list = post_list.filter()
-             tmp = []
-             for post in post_list:
-                 image_list = Images.objects.filter(post_id=post.post_id)
-                 image_src_list = []
-                 for image in image_list:
-                     image_src_list.append(get_image_path(image))
-                 tmp.append((post, image_src_list))
+        form = search_form()
 
-             post_list = tmp
-             print len(post_list)
-             context = { 'form': form, 'post_list': post_list }
-             return render(request, 'forums/results.html', context)
-  
+        if not (text or user):
+            context = { 'form': form }
+            return render(request, 'forums/search.html', context)
+
+        if user:
+            user = Users.objects.filter(username = user)
+            if user: user_id = user.user_id
+
+        if user_id:
+            post_list = Posts.objects.filter(user_id=user_id)
+            if text and post_list:
+                post_list = post_list.filter(msg__icontains=text)
         else:
-             form = search_form()
-             context = { 'form': form }
+            post_list = Posts.objects.filter(msg__icontains=text)
+
+        if forum:
+	    forum = Forums.objects.filter(name=forum)
+	    #if forum: post_list = post_list.filter()
+        
+        tmp = []
+        for post in post_list:
+            image_list = Images.objects.filter(post_id=post.post_id)
+            image_src_list = []
+            for image in image_list:
+                image_src_list.append(get_image_path(image))
+            tmp.append((post, image_src_list))
+
+        post_list = tmp
+        print len(post_list)
+        context = { 'form': form, 'post_list': post_list }
+        return render(request, 'forums/results.html', context)
+  
     else:
              form = search_form()
              context = { 'form': form }
+
     return render(request, 'forums/search.html', context)
 
 
@@ -144,11 +163,11 @@ def forum(request, forum_id):
   for sub in subforum_list:
       print "1 iteration"
       count = 0
-      print count
       thread_list = Threads.objects.filter(subforum_id=sub.subforum_id)
-      for thread in thread_list:
-          if Posts.objects.filter(thread_id=thread.thread_id): count += 1
-      tmp.append((sub, count))
+      #for thread in thread_list:
+          #if Posts.objects.filter(thread_id=thread.thread_id): count += 1
+          #print count
+      tmp.append((sub, len(thread_list)))
 
   subforum_list = tmp
   print subforum_list

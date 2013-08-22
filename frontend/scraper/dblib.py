@@ -138,6 +138,13 @@ def insert_data(con, cur, post):
 
   INPUTS: MySQLdb Connection object, MySQLdb Cursor object, Post defaultdict 
   RETURNS: tuple (post id, user id)"""
+
+  #escape everything
+  for key in post.keys():
+      if key == 'tag': continue
+      print key
+      post[key] = con.escape_string(post[key])
+
   #print post
   f_id = get_id( cur, "FORUMS", "forum_url", post['home'])
   if not f_id:

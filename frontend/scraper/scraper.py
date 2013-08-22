@@ -14,6 +14,7 @@ from multiprocessing import Value
 import logging
 import cPickle
 import argparse
+import random
 
 import MySQLdb as mdb
 
@@ -27,7 +28,9 @@ from hotqueue import HotQueue
 from parsers import *
 from local_settings import *
 import dblib
+import gc
 
+#gc.set_debug(gc.DEBUG_LEAK)
 mysql_host = host
 mysql_username = user
 mysql_password = passwd
@@ -50,10 +53,16 @@ pfile = ""
 save_files = False
 con, cur = dblib.setup_db()
 
+delay = 0
+delay_range = 0
+
 def parse_args(args):
     parser = argparse.ArgumentParser(description="Scrape a forum", add_help=False)
     parser.add_argument("url")
     parser.add_argument("num")
+    parser.add_argument("--authfile")
+    parser.add_argument("--delay", type=int)
+    parser.add_argument("--delay_range", type=int)
     parser.add_argument("--save_files", action="store_true")
     type_scrape = parser.add_mutually_exclusive_group()
     #type_scrape.add_argument("--archives", action="store_true")
@@ -194,7 +203,7 @@ def add_to_database(subforum, link, post):
     post['thread'] = link 
     if not post['plink']:
         post['plink'] = link 
-    print post
+    print "asdw: " + str(post)
     dblib.insert_data(con, cur, post)
 
 def scout(q):
@@ -217,12 +226,18 @@ def scout(q):
             i += 1
         state[1] = 0
         state[0] += 1
+    gc.collect()
     return
 
 def parser(qf, qt):
     global training, P
     contents = qf.get()
+    tic = 0
     while contents != "-sentinel-":
+        tic += 1
+        if tic >= 100:
+            gc.collect()
+            tic = 0
         if not contents:
             contents = qf.get()
             continue
@@ -264,9 +279,17 @@ def save_file(subforum, link, source, qf):
     #contents = cPickle.dumps((subforum.encode('utf8'), link, source.encode('utf8')))
     qf.put((subforum, link, source))
 
-def worker(q, qf, qt):
+def worker(q, qf, qt, d, dr):
+
+
     br = init_selenium()
     for job in q.consume(timeout=5):
+        if (d and dr) and (d >= dr):
+            delay = random.triangular(d-dr, d+dr)
+            print "delay is: " + str(delay)
+            sleep(delay)
+        else:
+            print "Delay and dr not set"
         if not job:
             break
         # front page of thread, so get links
@@ -315,7 +338,7 @@ def init_workers(num):
     workers.append(scout)
     sleep(15)
     for i in xrange(num):
-        tmp = multiprocessing.Process(target=worker, args=(q,qf,qt,))
+        tmp = multiprocessing.Process(target=worker, args=(q,qf,qt,delay, delay_range))
         tmp.start()
         print "Starting worker process %s" % str(tmp.pid)
         workers.append(tmp)
@@ -329,6 +352,14 @@ def init_workers(num):
 
 args = parse_args(sys.argv[1:])
 home = args.url
+
+if args.delay:
+    print args.delay
+    delay = args.delay
+if args.delay_range:
+    delay_range = args.delay_range
+    print args.delay_range
+
 #q = JoinableQueue()
 save_files = args.save_files
 
