@@ -61,8 +61,8 @@ def parse_args(args):
     parser.add_argument("url")
     parser.add_argument("num")
     parser.add_argument("--authfile")
-    parser.add_argument("--delay", type=int)
-    parser.add_argument("--delay_range", type=int)
+    parser.add_argument("-d", metavar="delay", type=int)
+    parser.add_argument("-r", metavar ="delay_range", type=int)
     parser.add_argument("--save_files", action="store_true")
     type_scrape = parser.add_mutually_exclusive_group(required=True)
     #type_scrape.add_argument("--archives", action="store_true")
@@ -71,6 +71,7 @@ def parse_args(args):
     return parser.parse_args(args)
 
 def init_logger():
+    global logger
     logging.basicConfig(filename='%s.log'%home,level=logging.INFO)
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
@@ -292,10 +293,7 @@ def worker(q, qf, qt, d, dr):
     for job in q.consume(timeout=5):
         if (d and dr) and (d >= dr):
             delay = random.triangular(d-dr, d+dr)
-            print "delay is: " + str(delay)
             sleep(delay)
-        else:
-            print "Delay and dr not set"
         if not job:
             break
         # front page of thread, so get links
