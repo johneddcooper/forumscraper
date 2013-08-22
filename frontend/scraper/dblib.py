@@ -200,7 +200,7 @@ def insert_data(con, cur, post):
   if not user_id:
 		#print "post id not found\nPOST MESSAGE: %s\n\n" % (post["msg"])
 		try:
-			cur.execute("INSERT INTO USERS (forum_id, username, usertitle, joindate, sig) VALUES (%s, %s, %s, %s, %s)", (f_id, post["name"], post["title"], post["joindate"], post["sig"]))
+			cur.execute("INSERT INTO USERS (forum_id, username, usertitle, joindate, sig) VALUES (%s, %s, %s, %s, %s)", (f_id, post["name"], post["utitle"], post["joindate"], post["sig"]))
 			con.commit()
 		except:
 			print "ERROR: Could not add %s into users table" % post["name"]
