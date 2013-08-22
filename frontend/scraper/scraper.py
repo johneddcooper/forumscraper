@@ -61,8 +61,8 @@ def parse_args(args):
     parser.add_argument("url")
     parser.add_argument("num")
     parser.add_argument("--authfile")
-    parser.add_argument("-d", metavar="delay", type=int)
-    parser.add_argument("-r", metavar ="delay_range", type=int)
+    parser.add_argument("-d", "--delay", type=int)
+    parser.add_argument("-r", "--delay_range", type=int)
     parser.add_argument("--save_files", action="store_true")
     type_scrape = parser.add_mutually_exclusive_group(required=True)
     #type_scrape.add_argument("--archives", action="store_true")
@@ -72,7 +72,7 @@ def parse_args(args):
 
 def init_logger():
     global logger
-    logging.basicConfig(filename='%s.log'%home,level=logging.INFO)
+    logging.basicConfig(filename='%s.log'%home,level=logging.DEBUG)
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
 
@@ -199,6 +199,7 @@ def get_threads(br):
     
     yield get_threads_on_page(br, stub)
     for page in pages:
+        visit_page(br, page)
         #get threads
         #threads start with archive_link, but do not start with stub_template
         yield get_threads_on_page(br, stub)
@@ -218,6 +219,8 @@ def scout(q):
     visit_page(br, archive_link)
     subforums = get_subforums(br)
     initialized = False
+    logger.debug("Grabbed subforums.")
+    logger.debug(subforums)
     for subforum in subforums[state[0]:]:
         visit_page(br, subforum)
         sub_title = br.title
@@ -360,11 +363,11 @@ args = parse_args(sys.argv[1:])
 home = args.url
 
 if args.delay:
-    print args.delay
     delay = args.delay
+    logger.info("Using delay: " + str(args.delay))
 if args.delay_range:
     delay_range = args.delay_range
-    print args.delay_range
+    logger.info("Using delay range: " + str(args.delay_range))
 
 #q = JoinableQueue()
 save_files = args.save_files
@@ -373,7 +376,7 @@ home = re.sub("/$", "", home)
 home = re.sub("^http://", "", home)
 hdir = "./" + home
 if save_files and not os.path.isdir(hdir):
-        os.mkdir(hdir)
+    os.mkdir(hdir)
 pfile = hdir[2:] + ".p"
 
 
