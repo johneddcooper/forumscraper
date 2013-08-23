@@ -8,15 +8,14 @@ from time import sleep
 import urlparse
 import subprocess
 from collections import Counter, defaultdict
-import pdb
 import multiprocessing
 from multiprocessing import Value
 import logging
 import cPickle
 import argparse
 import random
-
 import MySQLdb as mdb
+import pdb
 
 from BeautifulSoup import BeautifulSoup as bs
 from selenium import webdriver
@@ -72,7 +71,7 @@ def parse_args(args):
 
 def init_logger():
     global logger
-    logging.basicConfig(filename='%s.log'%home,level=logging.DEBUG)
+    logging.basicConfig(filename='%s.log'%home,level=logging.INFO)
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 
@@ -164,9 +163,14 @@ def get_subforums(br):
 
 def get_threads_on_page(br, stub):
     urls = get_urls(br)
+    tries = 0
+    while not urls and tries < 5:
+        logger.error("No urls on page %s" %stub)
+        br.refresh()
+        time.sleep(5)
+        urls = get_urls(br)
     if not urls:
-        logger.error("No urls on page...")
-        logger.error(stub)
+        logger.error("No urls. Giving up on page %s" %stub)
         return
     stub_template = strip_num(stub)
     no_nums = map(strip_num, urls)
@@ -200,17 +204,20 @@ def get_threads(br):
     # remove duplicates while preserving order
     pages = uniq(pages)
     
-    yield get_threads_on_page(br, stub)
+    threads = get_threads_on_page(br, stub)
+    if threads:
+        yield threads
     for page in pages:
         visit_page(br, page)
         #get threads
         #threads start with archive_link, but do not start with stub_template
-        yield get_threads_on_page(br, stub)
-
+        threads = get_threads_on_page(br, stub)
+        if threads:
+            yield threads
 def add_to_database(subforum, link, post):
     # post is a defaultdict that defaults to ""
     post['home'] = home
-    post['subname'] = subforum#.decode('utf8')
+    post['subname'] = subforum
     post['thread'] = link 
     if not post['plink']:
         post['plink'] = link 
@@ -231,6 +238,9 @@ def scout(q):
             logger.debug("Skipping subforum: %s" % br.current_url)
             continue
         for i, tl in enumerate(get_threads(br)):
+            if not tl:
+                logger.error("No urls on page...")
+                continue
             if i >= state[1]:
                 # [q.put(cPickle.dumps((sub_title.encode('utf8'), thread))) for thread in tl]
                 [q.put((sub_title.encode('utf8'), thread)) for thread in tl]
@@ -242,7 +252,7 @@ def scout(q):
     gc.collect()
     return
 
-def parser(qf, qt):
+def parser(qf, qt, main=False):
     global training, P
     contents = qf.get()
     tic = 0
@@ -256,10 +266,12 @@ def parser(qf, qt):
             continue
         sf, link, src = contents
         #sf, link, src = cPickle.loads(contents)
-        logger.debug("Parsing link %s" %link)
         if generic and not P.ready:
+            if not main:
+                continue
             # if adding this source pushes P over the training data threshold,
             # it will return the last five pages' parsed
+            logger.debug("Parsing link %s" %link)
             if P.add_source(src):
                 qt.value=True
                 results = P.train_and_parse()
@@ -268,6 +280,7 @@ def parser(qf, qt):
                     for post in pages:
                         add_to_database(sf, link, post)
         else: 
+            logger.debug("Parsing link %s" %link)
             posts = P.parse(src)
             if not posts:
                 logger.error("No post data. Weird.")
@@ -293,8 +306,6 @@ def save_file(subforum, link, source, qf):
     qf.put((subforum, link, source))
 
 def worker(q, qf, qt, d, dr):
-
-
     br = init_selenium()
     for job in q.consume(timeout=5):
         if (d and dr) and (d >= dr):
@@ -322,9 +333,12 @@ def worker(q, qf, qt, d, dr):
             # this should never happen
             logger.error("Malformed job length. Job:%s"%job)
         source = br.page_source
+        if not source:
+            logger.error("No page source: %s"%job)
+            q.put((subforum,link))
         while qt.value:
             sleep(1)
-        logger.info("Saving page %s" % link)
+        logger.debug("Saving page %s" % link)
         save_file(subforum, link, source, qf)
     qf.put("-sentinel-") # sentinel
 
@@ -354,8 +368,13 @@ def init_workers(num):
         tmp.start()
         logger.info("Starting worker process %s" % str(tmp.pid))
         workers.append(tmp)
-    logger.info("Using main process as parser.")
-    parser(qf,qt)
+    for i in xrange(num-1):
+        tmp = multiprocessing.Process(target=parser, args=(qf,qt))
+        tmp.start()
+        logger.info("Starting parser process %s" % str(tmp.pid))
+        workers.append(tmp)
+    parser(qf,qt, main=True)
+    logger.info("Using main process as parser")
     for worker in workers:
         worker.join()
     logger.info("All done.")

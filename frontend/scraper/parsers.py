@@ -463,6 +463,10 @@ class GenericParser:
     def extract_contents(self, soup):
         """Extracts content of a soup, given training data"""
         tbd = self.get_tags_by_depth(soup)
+        if len(tbd) < self.depth:
+            logger.error("Soup not of sufficient depth")
+            logger.error(soup)
+            return
         tags = [self.get_tags_by_string(out, tbd[self.depth]) for out in self.outliar_names]
         contents = self.further_extract_contents(tags)
         [contents.append(tag) for tag in tags \

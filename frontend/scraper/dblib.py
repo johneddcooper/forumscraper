@@ -35,33 +35,32 @@ def get_item(cur, table, col, id_name, ID):
         row = cur.fetchone()
         if row: return row[0]
     except mdb.Error:
-        logger.error("Cannot finde item")
+        logger.error("Cannot find item")
     return None
     
 
 def get_id( cur, table, id_name, name):
-  """This function gets the mysql generated id number of a row from a table
+    """This function gets the mysql generated id number of a row from a table
 
-  INPUTS: MySQLdb Cursor object, string (table name), string (column name), string(search string)
-  RETURNS: int (related ID or 0)"""
+    INPUTS: MySQLdb Cursor object, string (table name), string (column name), string(search string)
+    RETURNS: int (related ID or 0)"""
 
-  regex = re.compile(r'["\']')
-  name = regex.sub('', name)
-  if id_name == "thread_name":  logger.debug("thread name: %s", name)
-  command = "SELECT * FROM %s WHERE %s = \"%s\";" % (table, id_name, name)
-  #print command
-  try:
-	  cur.execute(command)
-	  row = cur.fetchone()
-  except mdb.Error:
-		print "ERROR: Cannot get %s for %s" % (id_name, name)
-		logger.error("Cannot get %s for %s", id_name, name)
-		return 0
-  else:
-	  if row:
-			return row[0]
-	  else:
-			return 0
+    #if id_name == "thread_name":  logger.debug("thread name: %s", name)
+    command = "SElECT * FROM %s WHERE %s = " %(table,id_name)
+    try:
+        cur.execute(command + "%s", name)
+        row = cur.fetchone()
+        
+    except mdb.Error:
+        raise
+        print "ERROR: Cannot get %s for %s" % (id_name, name)
+        logger.error("Cannot get %s for %s", id_name, name)
+        return 0
+    else:
+        if row:
+            return row[0]
+        else:
+            return 0
 
 
 def link_images(con, cur, post_id):
@@ -143,13 +142,10 @@ def insert_data(con, cur, post):
   for key in post.keys():
       if key in ['tag', 'msg', 'edit', 'images'] or (not post[key]): continue
 
-      print key
       try:
           inmate = post[key].encode('utf8')
       except UnicodeDecodeError: 
           inmate = post[key]
-      print inmate
-      print "Type:", type(inmate)
       post[key] = con.escape_string(inmate).decode('utf8')
 
   #print post
@@ -193,8 +189,6 @@ def insert_data(con, cur, post):
 			return (0, 0)
 		thread_id = get_id(cur, "THREADS", "thread_name", post["thread"])
   		#print "New THREAD: %s" % post["thread"]
-  post["thread_id"] = thread_id
-
 
   user_id = get_id( cur, "USERS", "username", post["name"])
   if not user_id:
@@ -208,7 +202,8 @@ def insert_data(con, cur, post):
 			return (0, 0)
 		user_id = get_id(cur, "USERS", "username", post["name"])
   #print post_id
-  post_id = get_id( cur, "POSTS", "postlink", post["plink"])
+  cur.execute("SELECT * FROM POSTS WHERE postlink = \"%s\" AND postdate = \"%s\"", (post['plink'], post['date']))
+  post_id = cur.fetchone()
   if not post_id:
 		#print "post id not found\nPOST MESSAGE: %s\n\n" % (post["msg"])
 		try:
@@ -262,8 +257,6 @@ def get_thread_count(thread_name, cur):
         raise
         return 0
   #print post_id
-
-  #if not get_id(cur, "THREADS", "thread_name", "dick f"):
 
   #cur.execute("""INSERT INTO FORUM_POSTS
   #          (forum_name, subforum_name, thread_name, postdate, postlink, msg, username, usertitle,
